@@ -412,22 +412,26 @@ fixedpt_pow(fixedpt n, fixedpt exp)
 
 /* Fast arctan2 from https://dspguru.com/dsp/tricks/fixed-point-atan2-with-self-normalization/ */
 static inline fixedpt
-fixedpt_arctan2(fixedpt y, fixedpt x)
+fixedpt_atan2(fixedpt y, fixedpt x)
 {
-	fixedpt r, angle, abs_y;
+	fixedpt r, r_3, angle, abs_y;
 	const fixedpt coeff_1 = FIXEDPT_QUATER_PI;
-   	const fixedpt coeff_2 = fixed_mul(fixedpt_fromint(3), FIXEDPT_QUATER_PI);
+   	const fixedpt coeff_2 = fixedpt_mul(fixedpt_fromint(3), FIXEDPT_QUATER_PI);
+	const fixedpt r_coeff_1 = fixedpt_rconst(0.1963);
+	const fixedpt r_coeff_2 = fixedpt_rconst(0.9817);
 
-   	abs_y = (y<0?-y:y) + 1      // kludge to prevent 0/0 condition
+   	abs_y = (y<0?-y:y);      // kludge to prevent 0/0 condition
    	if(x >= 0)
    	{
-      	r = fixedpt_div(fixed_sub(x, abs_y), fixedpt_add(x, abs_y));
-      	angle = coeff_1 - coeff_1 * r;
+      	r = fixedpt_div(fixedpt_sub(x, abs_y), fixedpt_add(x, abs_y));
+		r_3 = fixedpt_mul(fixedpt_mul(r, r), r);
+      	angle = fixedpt_add( fixedpt_sub( fixedpt_mul(r_3, r_coeff_1), fixedpt_mul(r, r_coeff_2) ), coeff_1);
   	}
    	else
    	{
-      	r = fixedpt_div(fixedpt_add(x, abs_y), fixed_sub(abs_y, x));
-      	angle = coeff_2 - coeff_1 * r;
+      	r = fixedpt_div(fixedpt_add(x, abs_y), fixedpt_sub(abs_y, x));
+		r_3 = fixedpt_mul(fixedpt_mul(r, r), r);
+      	angle = fixedpt_add( fixedpt_sub( fixedpt_mul(r_3, r_coeff_1), fixedpt_mul(r, r_coeff_2) ), coeff_2);
    	}
    	if(y < 0)
    		return(-angle);     // negate if in quad III or IV

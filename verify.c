@@ -71,21 +71,26 @@ verify_trig()
 	printf("tan(e) as double:\t%0.15lf\n", tan(e_d));
 	printf("tan(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_tan(e_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_tan(e_x), -2)) - tan(e_d));
+}
 
+void
+verify_atan2()
+{
 	printf("atan2(x) as float:\t%0.6f\n", atan2f(atan_1_f, atan_4_f));
 	printf("atan2(x) as double:\t%0.15lf\n", atan2(atan_1_d, atan_4_d));
 	printf("atan2(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_atan2(atan_1_x, atan_4_x), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(atan_1_d, atan_4_d), -2)) - atan2(atan_1_d, atan_4_d));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(atan_1_x, atan_4_x), -2)) - atan2(atan_1_d, atan_4_d));
 
 	printf("atan2(x) as float:\t%0.6f\n", atan2f(atan_2_f, -atan_2_f));
 	printf("atan2(x) as double:\t%0.15lf\n", atan2(atan_2_d, -atan_2_d));
 	printf("atan2(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_atan2(atan_2_x, -atan_2_x), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(atan_2_d, -atan_2_d), -2)) - atan2(atan_2_d, -atan_2_d));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(atan_2_x, -atan_2_x), -2)) - atan2(atan_2_d, -atan_2_d));
 
 	printf("atan2(x) as float:\t%0.6f\n", atan2f(-atan_3_f, atan_5_f));
 	printf("atan2(x) as double:\t%0.15lf\n", atan2(-atan_3_d, atan_5_d));
 	printf("atan2(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_atan2(-atan_3_x, atan_5_x), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(-atan_3_d, atan_5_d), -2)) - atan2(-atan_3_d, atan_5_d));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(-atan_3_x, atan_5_x), -2)) - atan2(-atan_3_d, atan_5_d));
+
 }
 
 void
@@ -119,6 +124,8 @@ main()
 	verify_trig();
 	printf("\n");
 	verify_powers();
+	printf("\n");
+	verify_atan2();
 
 	return (0);
 }
