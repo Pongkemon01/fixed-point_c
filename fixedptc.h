@@ -68,11 +68,19 @@
  * SUCH DAMAGE.
  */
 
+#include <stdint.h>
+
 #ifndef FIXEDPT_BITS
 #define FIXEDPT_BITS	32
 #endif
 
-#include <stdint.h>
+#ifndef FIXEDPT_WBITS
+#define FIXEDPT_WBITS	18
+#endif
+
+#if FIXEDPT_WBITS >= FIXEDPT_BITS
+#error "FIXEDPT_WBITS must be less than or equal to FIXEDPT_BITS"
+#endif
 
 #if FIXEDPT_BITS == 32
 typedef int32_t fixedpt;
@@ -88,13 +96,6 @@ typedef	__uint128_t fixedptud;
 #error "FIXEDPT_BITS must be equal to 32 or 64"
 #endif
 
-#ifndef FIXEDPT_WBITS
-#define FIXEDPT_WBITS	24
-#endif
-
-#if FIXEDPT_WBITS >= FIXEDPT_BITS
-#error "FIXEDPT_WBITS must be less than or equal to FIXEDPT_BITS"
-#endif
 
 #define FIXEDPT_VCSID "$Id$"
 
