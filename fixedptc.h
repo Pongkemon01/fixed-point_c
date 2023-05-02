@@ -116,11 +116,22 @@ typedef	__uint128_t fixedptud;
 #define FIXEDPT_ONE	((fixedpt)((fixedpt)1 << FIXEDPT_FBITS))
 #define FIXEDPT_ONE_HALF (FIXEDPT_ONE >> 1)
 #define FIXEDPT_TWO	(FIXEDPT_ONE + FIXEDPT_ONE)
+
+/* Trigonometry constants */
 #define FIXEDPT_PI	fixedpt_rconst(3.14159265358979323846)
 #define FIXEDPT_TWO_PI	fixedpt_rconst(2 * 3.14159265358979323846)
 #define FIXEDPT_HALF_PI	fixedpt_rconst(3.14159265358979323846 / 2)
 #define FIXEDPT_QUATER_PI	fixedpt_rconst(3.14159265358979323846 / 4)
+#define FIXEDPT_THREEQUATER_PI	fixedpt_rconst(3.14159265358979323846 * 3 / 4)
+#define FIXEDPT_ONETHIRD_PI fixedpt_rconst(3.14159265358979323846 / 3)          // pi / 3
+#define FIXEDPT_TWO_ONETHIRD_PI  fixedpt_rconst(2 * 3.14159265358979323846 / 3) // 2pi / 3
+
+/* Misc constant */
 #define FIXEDPT_E	fixedpt_rconst(2.7182818284590452354)
+#define FIXEDPT_SQRT_TWO	fixedpt_rconst(1.41421356237)			// sqrt(2)
+#define FIXEDPT_ONE_BY_SQRT_TWO	fixedpt_rconst(0.70710678119)		// 1/sqrt(2)
+#define FIXEDPT_SQRT_THREE fixedpt_rconst(1.73205080757)        	// sqrt(3)
+#define FIXEDPT_ONE_BY_SQRT_THREE   fixedpt_rconst(0.57735026919)   // 1/sqrt(3)
 
 #define fixedpt_abs(A) ((A) < 0 ? -(A) : (A))
 
