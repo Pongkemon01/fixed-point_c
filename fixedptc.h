@@ -1,6 +1,24 @@
 #ifndef _FIXEDPTC_H_
 #define _FIXEDPTC_H_
 
+#ifdef _FIXEDPT_STATIC
+
+#define _FIXEDPT_FUNCTYPE	static inline
+#define _FIXEDPT_PROTOTYPE	static inline
+#define _FIXEDPT_IMPLEMENTATION
+
+#else
+
+#define _FIXEDPT_FUNCTYPE
+
+#ifdef _FIXEDPT_IMPLEMENTATION
+#define _FIXEDPT_PROTOTYPE
+#else
+#define _FIXEDPT_PROTOTYPE extern
+#endif
+
+#endif
+
 /*
  * fixedptc.h is a 32-bit or 64-bit fixed point numeric library.
  *
@@ -141,17 +159,51 @@ typedef	__uint128_t fixedptud;
 #define fixedpt_tofloat(T) ((float) ((T)*((float)(1)/(float)(1L << FIXEDPT_FBITS))))
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Function prototypes */
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_mul(fixedpt A, fixedpt B);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_div(fixedpt A, fixedpt B);
+_FIXEDPT_PROTOTYPE void fixedpt_str(fixedpt A, char *str, int max_dec);
+_FIXEDPT_PROTOTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_sqrt(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_exp(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_ln(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_log(fixedpt x, fixedpt base);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef _FIXEDPT_IMPLEMENTATION
+
+/* Implementation of the functions */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /* Multiplies two fixedpt numbers, returns the result. */
-static inline fixedpt
-fixedpt_mul(fixedpt A, fixedpt B)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_mul(fixedpt A, fixedpt B)
 {
-	return (((fixedptd)A * (fixedptd)B) >> FIXEDPT_FBITS);
+	fixedptd product = (fixedptd)A * (fixedptd)B;
+	fixedpt result = ((fixedptd)A * (fixedptd)B) >> FIXEDPT_FBITS;
+	fixedpt rounding = (product & (((fixedptd)1) << (FIXEDPT_FBITS - 1))) >> (FIXEDPT_FBITS - 1);
+
+	return (result + rounding);
 }
 
 
 /* Divides two fixedpt numbers, returns the result. */
-static inline fixedpt
-fixedpt_div(fixedpt A, fixedpt B)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_div(fixedpt A, fixedpt B)
 {
 	return (((fixedptd)A << FIXEDPT_FBITS) / (fixedptd)B);
 }
@@ -170,8 +222,7 @@ fixedpt_div(fixedpt A, fixedpt B)
  * be returned, meaning there will be invalid, bogus digits outside the
  * specified precisions.
  */
-static inline void
-fixedpt_str(fixedpt A, char *str, int max_dec)
+_FIXEDPT_FUNCTYPE void fixedpt_str(fixedpt A, char *str, int max_dec)
 {
 	int ndec = 0, slen = 0;
 	char tmp[12] = {0};
@@ -226,8 +277,7 @@ fixedpt_str(fixedpt A, char *str, int max_dec)
 
 /* Converts the given fixedpt number into a string, using a static
  * (non-threadsafe) string buffer */
-static inline char*
-fixedpt_cstr(const fixedpt A, const int max_dec)
+_FIXEDPT_FUNCTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec)
 {
 	static char str[25];
 
@@ -237,8 +287,7 @@ fixedpt_cstr(const fixedpt A, const int max_dec)
 
 
 /* Returns the square root of the given number, or -1 in case of error */
-static inline fixedpt
-fixedpt_sqrt(fixedpt A)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt A)
 {
 	int invert = 0;
 	int iter = FIXEDPT_FBITS;
@@ -274,8 +323,7 @@ fixedpt_sqrt(fixedpt A)
 
 /* Returns the sine of the given fixedpt number. 
  * Note: the loss of precision is extraordinary! */
-static inline fixedpt
-fixedpt_sin(fixedpt fp)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_sin(fixedpt A)
 {
 	int sign = 1;
 	fixedpt sqr, result;
@@ -284,48 +332,45 @@ fixedpt_sin(fixedpt fp)
 		fixedpt_rconst(1.6605e-01)
 	};
 
-	fp %= 2 * FIXEDPT_PI;
-	if (fp < 0)
-		fp = FIXEDPT_PI * 2 + fp;
-	if ((fp > FIXEDPT_HALF_PI) && (fp <= FIXEDPT_PI)) 
-		fp = FIXEDPT_PI - fp;
-	else if ((fp > FIXEDPT_PI) && (fp <= (FIXEDPT_PI + FIXEDPT_HALF_PI))) {
-		fp = fp - FIXEDPT_PI;
+	A %= 2 * FIXEDPT_PI;
+	if (A < 0)
+		A = FIXEDPT_PI * 2 + A;
+	if ((A > FIXEDPT_HALF_PI) && (A <= FIXEDPT_PI)) 
+		A = FIXEDPT_PI - A;
+	else if ((A > FIXEDPT_PI) && (A <= (FIXEDPT_PI + FIXEDPT_HALF_PI))) {
+		A = A - FIXEDPT_PI;
 		sign = -1;
-	} else if (fp > (FIXEDPT_PI + FIXEDPT_HALF_PI)) {
-		fp = (FIXEDPT_PI << 1) - fp;
+	} else if (A > (FIXEDPT_PI + FIXEDPT_HALF_PI)) {
+		A = (FIXEDPT_PI << 1) - A;
 		sign = -1;
 	}
-	sqr = fixedpt_mul(fp, fp);
+	sqr = fixedpt_mul(A, A);
 	result = SK[0];
 	result = fixedpt_mul(result, sqr);
 	result -= SK[1];
 	result = fixedpt_mul(result, sqr);
 	result += FIXEDPT_ONE;
-	result = fixedpt_mul(result, fp);
+	result = fixedpt_mul(result, A);
 	return sign * result;
 }
 
 
 /* Returns the cosine of the given fixedpt number */
-static inline fixedpt
-fixedpt_cos(fixedpt A)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_cos(fixedpt A)
 {
 	return (fixedpt_sin(FIXEDPT_HALF_PI - A));
 }
 
 
 /* Returns the tangens of the given fixedpt number */
-static inline fixedpt
-fixedpt_tan(fixedpt A)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
 {
 	return fixedpt_div(fixedpt_sin(A), fixedpt_cos(A));
 }
 
 
 /* Returns the value exp(x), i.e. e^x of the given fixedpt number. */
-static inline fixedpt
-fixedpt_exp(fixedpt fp)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_exp(fixedpt x)
 {
 	fixedpt xabs, k, z, R, xp;
 	const fixedpt LN2 = fixedpt_rconst(0.69314718055994530942);
@@ -338,22 +383,22 @@ fixedpt_exp(fixedpt fp)
 		fixedpt_rconst(4.13813679705723846039e-08),
 	};
 
-	if (fp == 0)
+	if (x == 0)
 		return (FIXEDPT_ONE);
-	xabs = fixedpt_abs(fp);
+	xabs = fixedpt_abs(x);
 	k = fixedpt_mul(xabs, LN2_INV);
 	k += FIXEDPT_ONE_HALF;
 	k &= ~FIXEDPT_FMASK;
-	if (fp < 0)
+	if (x < 0)
 		k = -k;
-	fp -= fixedpt_mul(k, LN2);
-	z = fixedpt_mul(fp, fp);
+	x -= fixedpt_mul(k, LN2);
+	z = fixedpt_mul(x, x);
 	/* Taylor */
 	R = FIXEDPT_TWO +
 	    fixedpt_mul(z, EXP_P[0] + fixedpt_mul(z, EXP_P[1] +
 	    fixedpt_mul(z, EXP_P[2] + fixedpt_mul(z, EXP_P[3] +
 	    fixedpt_mul(z, EXP_P[4])))));
-	xp = FIXEDPT_ONE + fixedpt_div(fixedpt_mul(fp, FIXEDPT_TWO), R - fp);
+	xp = FIXEDPT_ONE + fixedpt_div(fixedpt_mul(x, FIXEDPT_TWO), R - x);
 	if (k < 0)
 		k = FIXEDPT_ONE >> (-k >> FIXEDPT_FBITS);
 	else
@@ -363,8 +408,7 @@ fixedpt_exp(fixedpt fp)
 
 
 /* Returns the natural logarithm of the given fixedpt number. */
-static inline fixedpt
-fixedpt_ln(fixedpt x)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_ln(fixedpt x)
 {
 	fixedpt log2, xi;
 	fixedpt f, s, z, w, R;
@@ -404,27 +448,24 @@ fixedpt_ln(fixedpt x)
 	
 
 /* Returns the logarithm of the given base of the given fixedpt number */
-static inline fixedpt
-fixedpt_log(fixedpt x, fixedpt base)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_log(fixedpt x, fixedpt base)
 {
 	return (fixedpt_div(fixedpt_ln(x), fixedpt_ln(base)));
 }
 
 
 /* Return the power value (n^exp) of the given fixedpt numbers */
-static inline fixedpt
-fixedpt_pow(fixedpt n, fixedpt exp)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 {
 	if (exp == 0)
 		return (FIXEDPT_ONE);
-	if (n < 0)
+	if (x < 0)
 		return 0;
-	return (fixedpt_exp(fixedpt_mul(fixedpt_ln(n), exp)));
+	return (fixedpt_exp(fixedpt_mul(fixedpt_ln(x), exp)));
 }
 
 /* Fast arctan2 from https://dspguru.com/dsp/tricks/fixed-point-atan2-with-self-normalization/ */
-static inline fixedpt
-fixedpt_atan2(fixedpt y, fixedpt x)
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
 {
 	fixedpt r, r_3, angle, abs_y;
 	const fixedpt coeff_1 = FIXEDPT_QUATER_PI;
@@ -450,5 +491,12 @@ fixedpt_atan2(fixedpt y, fixedpt x)
    	else
    		return(angle);
 }
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
 #endif
