@@ -93,7 +93,11 @@
 #endif
 
 #ifndef FIXEDPT_WBITS
-#define FIXEDPT_WBITS	18
+#if FIXEDPT_BITS == 32
+#define FIXEDPT_WBITS	14
+#else
+#define FIXEDPT_WBITS	32
+#endif
 #endif
 
 #if FIXEDPT_WBITS >= FIXEDPT_BITS
@@ -146,8 +150,8 @@ typedef	__uint128_t fixedptud;
 
 /* Misc constant */
 #define FIXEDPT_E	fixedpt_rconst(2.7182818284590452354)
-#define FIXEDPT_SQRT_TWO	fixedpt_rconst(1.41421356237)			// sqrt(2)
-#define FIXEDPT_ONE_BY_SQRT_TWO	fixedpt_rconst(0.70710678119)		// 1/sqrt(2)
+#define FIXEDPT_SQRT_TWO	fixedpt_rconst(1.4142135623730950488)			// sqrt(2)
+#define FIXEDPT_ONE_BY_SQRT_TWO	fixedpt_rconst(0.7071067811865474385)		// 1/sqrt(2)
 #define FIXEDPT_SQRT_THREE fixedpt_rconst(1.73205080757)        	// sqrt(3)
 #define FIXEDPT_ONE_BY_SQRT_THREE   fixedpt_rconst(0.57735026919)   // 1/sqrt(3)
 
@@ -157,27 +161,28 @@ typedef	__uint128_t fixedptud;
  * (e.g. microcontrollers, kernels), so we can't use floating point types directly.
  * Putting them only in macros will effectively make them optional. */
 #define fixedpt_tofloat(T) ((float) ((T)*((float)(1)/(float)(1L << FIXEDPT_FBITS))))
+#define fixedpt_todouble(T) ((double) ((T)*((double)(1)/(double)(1LL << FIXEDPT_FBITS))))
 
-
+/* Function prototypes */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Function prototypes */
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_mul(fixedpt A, fixedpt B);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_div(fixedpt A, fixedpt B);
 _FIXEDPT_PROTOTYPE void fixedpt_str(fixedpt A, char *str, int max_dec);
 _FIXEDPT_PROTOTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_sqrt(fixedpt A);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt A);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt A);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt A);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_exp(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_ln(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_log(fixedpt x, fixedpt base);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp);
+_FIXEDPT_PROTOTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) ;
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt A);
 
 #ifdef __cplusplus
 }
@@ -186,6 +191,7 @@ _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
 #ifdef _FIXEDPT_IMPLEMENTATION
 
 /* Implementation of the functions */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -195,8 +201,8 @@ extern "C" {
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_mul(fixedpt A, fixedpt B)
 {
 	fixedptd product = (fixedptd)A * (fixedptd)B;
-	fixedpt result = ((fixedptd)A * (fixedptd)B) >> FIXEDPT_FBITS;
-	fixedpt rounding = (product & (((fixedptd)1) << (FIXEDPT_FBITS - 1))) >> (FIXEDPT_FBITS - 1);
+	fixedpt result = (fixedpt)(product >> FIXEDPT_FBITS);
+	fixedpt rounding = (fixedpt)((product  >> (FIXEDPT_FBITS - 1)) & 1);
 
 	return (result + rounding);
 }
@@ -325,47 +331,62 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt A)
  * Note: the loss of precision is extraordinary! */
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_sin(fixedpt A)
 {
-	int sign = 1;
-	fixedpt sqr, result;
-	const fixedpt SK[2] = {
-		fixedpt_rconst(7.61e-03),
-		fixedpt_rconst(1.6605e-01)
-	};
+	fixedpt sin_t, cos_t;
 
-	A %= 2 * FIXEDPT_PI;
-	if (A < 0)
-		A = FIXEDPT_PI * 2 + A;
-	if ((A > FIXEDPT_HALF_PI) && (A <= FIXEDPT_PI)) 
-		A = FIXEDPT_PI - A;
-	else if ((A > FIXEDPT_PI) && (A <= (FIXEDPT_PI + FIXEDPT_HALF_PI))) {
-		A = A - FIXEDPT_PI;
-		sign = -1;
-	} else if (A > (FIXEDPT_PI + FIXEDPT_HALF_PI)) {
-		A = (FIXEDPT_PI << 1) - A;
-		sign = -1;
-	}
-	sqr = fixedpt_mul(A, A);
-	result = SK[0];
-	result = fixedpt_mul(result, sqr);
-	result -= SK[1];
-	result = fixedpt_mul(result, sqr);
-	result += FIXEDPT_ONE;
-	result = fixedpt_mul(result, A);
-	return sign * result;
+	fixedpt_sincos(A, &sin_t, &cos_t);
+	return sin_t;
 }
+
+// {
+// 	int sign = 1;
+// 	fixedpt sqr, result;
+// 	static const fixedpt SK[2] = {
+// 		fixedpt_rconst(7.61e-03),
+// 		fixedpt_rconst(1.6605e-01)
+// 	};
+
+// 	A %= FIXEDPT_TWO_PI;
+// 	if (A < 0)
+// 		A = FIXEDPT_TWO_PI + A;
+// 	if ((A > FIXEDPT_HALF_PI) && (A <= FIXEDPT_PI)) 
+// 		A = FIXEDPT_PI - A;
+// 	else if ((A > FIXEDPT_PI) && (A <= (FIXEDPT_PI + FIXEDPT_HALF_PI))) {
+// 		A = A - FIXEDPT_PI;
+// 		sign = -1;
+// 	} else if (A > (FIXEDPT_PI + FIXEDPT_HALF_PI)) {
+// 		A = (FIXEDPT_PI << 1) - A;
+// 		sign = -1;
+// 	}
+// 	sqr = fixedpt_mul(A, A);
+// 	result = SK[0];
+// 	result = fixedpt_mul(result, sqr);
+// 	result -= SK[1];
+// 	result = fixedpt_mul(result, sqr);
+// 	result += FIXEDPT_ONE;
+// 	result = fixedpt_mul(result, A);
+// 	return sign * result;
+// }
 
 
 /* Returns the cosine of the given fixedpt number */
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_cos(fixedpt A)
 {
-	return (fixedpt_sin(FIXEDPT_HALF_PI - A));
+	fixedpt sin_t, cos_t;
+	
+	fixedpt_sincos(A, &sin_t, &cos_t);
+	return cos_t;
 }
-
+// {
+// 	return (fixedpt_sin(FIXEDPT_HALF_PI - A));
+// }
 
 /* Returns the tangens of the given fixedpt number */
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
 {
-	return fixedpt_div(fixedpt_sin(A), fixedpt_cos(A));
+	fixedpt sin_t, cos_t;
+
+	fixedpt_sincos(A, &sin_t, &cos_t);
+	return fixedpt_div(sin_t, cos_t);
 }
 
 
@@ -373,9 +394,9 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_exp(fixedpt x)
 {
 	fixedpt xabs, k, z, R, xp;
-	const fixedpt LN2 = fixedpt_rconst(0.69314718055994530942);
-	const fixedpt LN2_INV = fixedpt_rconst(1.4426950408889634074);
-	const fixedpt EXP_P[5] = {
+	static const fixedpt LN2 = fixedpt_rconst(0.69314718055994530942);
+	static const fixedpt LN2_INV = fixedpt_rconst(1.4426950408889634074);
+	static const fixedpt EXP_P[5] = {
 		fixedpt_rconst(1.66666666666666019037e-01),
 		fixedpt_rconst(-2.77777777770155933842e-03),
 		fixedpt_rconst(6.61375632143793436117e-05),
@@ -412,8 +433,8 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_ln(fixedpt x)
 {
 	fixedpt log2, xi;
 	fixedpt f, s, z, w, R;
-	const fixedpt LN2 = fixedpt_rconst(0.69314718055994530942);
-	const fixedpt LG[7] = {
+	static const fixedpt LN2 = fixedpt_rconst(0.69314718055994530942);
+	static const fixedpt LG[7] = {
 		fixedpt_rconst(6.666666666666735130e-01),
 		fixedpt_rconst(3.999999999940941908e-01),
 		fixedpt_rconst(2.857142874366239149e-01),
@@ -464,34 +485,114 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 	return (fixedpt_exp(fixedpt_mul(fixedpt_ln(x), exp)));
 }
 
-/* Fast arctan2 from https://dspguru.com/dsp/tricks/fixed-point-atan2-with-self-normalization/ */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
-{
-	fixedpt r, r_3, angle, abs_y;
-	const fixedpt coeff_1 = FIXEDPT_QUATER_PI;
-   	const fixedpt coeff_2 = fixedpt_mul(fixedpt_fromint(3), FIXEDPT_QUATER_PI);
-	const fixedpt r_coeff_1 = fixedpt_rconst(0.1963);
-	const fixedpt r_coeff_2 = fixedpt_rconst(0.9817);
+// Function to perform the CORDIC algorithm
+// Define the number of iterations
+#define ITERATIONS 32
 
-   	abs_y = (y<0?-y:y);      // kludge to prevent 0/0 condition
-   	if(x >= 0)
-   	{
-      	r = fixedpt_div(fixedpt_sub(x, abs_y), fixedpt_add(x, abs_y));
-		r_3 = fixedpt_mul(fixedpt_mul(r, r), r);
-      	angle = fixedpt_add( fixedpt_sub( fixedpt_mul(r_3, r_coeff_1), fixedpt_mul(r, r_coeff_2) ), coeff_1);
-  	}
-   	else
-   	{
-      	r = fixedpt_div(fixedpt_add(x, abs_y), fixedpt_sub(abs_y, x));
-		r_3 = fixedpt_mul(fixedpt_mul(r, r), r);
-      	angle = fixedpt_add( fixedpt_sub( fixedpt_mul(r_3, r_coeff_1), fixedpt_mul(r, r_coeff_2) ), coeff_2);
-   	}
-   	if(y < 0)
-   		return(-angle);     // negate if in quad III or IV
-   	else
-   		return(angle);
+// Constant
+// Precomputed arctangent values for the CORDIC algorithm
+static const fixedpt FIXEDPT_ATAN_TABLE[ITERATIONS] = {
+    fixedpt_rconst(0.7853981633974483),             fixedpt_rconst(0.4636476090008061),     
+    fixedpt_rconst(0.24497866312686414),            fixedpt_rconst(0.12435499454676144),
+    fixedpt_rconst(0.06241880999595735),            fixedpt_rconst(0.031239833430268277),   
+    fixedpt_rconst(0.015623728620476831),           fixedpt_rconst(0.007812341060101111),
+    fixedpt_rconst(0.0039062301319669718),          fixedpt_rconst(0.0019531225164788188),  
+    fixedpt_rconst(0.0009765621895593195),          fixedpt_rconst(0.0004882812111948983),
+    fixedpt_rconst(0.00024414062014936177),         fixedpt_rconst(0.00012207031189367021), 
+    fixedpt_rconst(0.00006103515617420877),         fixedpt_rconst(0.000030517578115526096),
+    fixedpt_rconst(0.000015258789061315762),        fixedpt_rconst(0.00000762939453110197),
+    fixedpt_rconst(0.000003814697265606496),        fixedpt_rconst(0.000001907348632810187),
+    fixedpt_rconst(0.0000009536743164059606),       fixedpt_rconst(0.0000004768371582030885), 
+    fixedpt_rconst(0.00000023841857910155712),      fixedpt_rconst(0.00000011920928955078059),
+    fixedpt_rconst(0.000000059604644775390625),     fixedpt_rconst(0.000000029802322387695312), 
+    fixedpt_rconst(0.000000014901161193847656),     fixedpt_rconst(0.000000007450580596923828),
+    fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
+    fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
+};
+static const fixedpt FIXEDPT_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; // K value for 32 iterations
+
+// Function to compute sine and cosine using CORDIC algorithm
+_FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
+{
+    // Initialize variables
+    fixedpt x = FIXEDPT_CORDIC_K;
+    fixedpt y = 0;
+    fixedpt xt, yt;
+    int flip_cos_sign = 0;
+
+    // Perform angle normalization
+    // Normalize to [-2pi, 2pi]
+    angle %= FIXEDPT_TWO_PI;
+
+    // Normalize to [-pi, pi]
+    if (angle < -FIXEDPT_PI) 
+        angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
+    if (angle > FIXEDPT_PI) 
+        angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
+
+    // Normalize to [-pi/2, pi/2]
+    if (angle > FIXEDPT_HALF_PI) {
+        angle = fixedpt_sub(FIXEDPT_PI, angle);
+        flip_cos_sign = 1;
+    } else if (angle < -FIXEDPT_HALF_PI) {
+        angle = fixedpt_sub(-FIXEDPT_PI, angle);
+        flip_cos_sign = 1;        
+    }
+
+    // Perform CORDIC iterations
+    for (int i = 0; i < ITERATIONS; i++) {
+        if (angle < 0) {
+            xt = fixedpt_add(x, (y >> i));
+            yt = fixedpt_sub(y, (x >> i));
+            angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
+        } else {
+            xt = fixedpt_sub(x, (y >> i));
+            yt = fixedpt_add(y, (x >> i));
+            angle = fixedpt_sub(angle, FIXEDPT_ATAN_TABLE[i]);
+        }
+        x = xt;
+        y = yt;
+    }
+
+    // Store the results
+    *cos_val = (flip_cos_sign != 0)? -x : x ;
+    *sin_val = y;
 }
 
+fixedpt fixedpt_atan2(fixedpt y, fixedpt x) 
+{
+    fixedpt angle = 0;
+    fixedpt xt, yt;
+
+    // Initialize angle
+    if (x < 0) {
+        if (y >= 0) {
+            angle = FIXEDPT_HALF_PI;
+        } else {
+            angle = -FIXEDPT_HALF_PI;
+        }
+        fixedpt temp = x;
+        x = y;
+        y = -temp;
+    }
+
+    // Perform CORDIC iterations
+    for (int i = 0; i < ITERATIONS; i++) {
+        if (y > 0) {
+            xt = fixedpt_add(x, (y >> i));
+            yt = fixedpt_sub(y, (x >> i));
+            angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
+        } else {
+            xt = fixedpt_sub(x, (y >> i));
+            yt = fixedpt_add(y, (x >> i));
+            angle = fixedpt_sub(angle, FIXEDPT_ATAN_TABLE[i]);
+        }
+        x = xt;
+        y = yt;
+    }
+
+    return angle;
+}
 
 #ifdef __cplusplus
 }

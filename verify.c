@@ -4,7 +4,9 @@
 #include <math.h>
 #include <locale.h>
 
-//#define FIXEDPT_WBITS 64
+//#define FIXEDPT_BITS 64
+
+//#define FIXEDPT_WBITS 8
 
 #define _FIXEDPT_STATIC
 #include "fixedptc.h"
@@ -47,7 +49,12 @@ verify_numbers()
 	printf("pi as double:\t%0.15lf\n", pi_d);
 	printf("pi as fixedpt:\t%s\n", fixedpt_cstr(pi_x, -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(pi_x, -2)) - pi_d);
+
+#if FIXEDPT_BITS == 32
 	printf("pi as fixedpt converted to float: %0.6f\n", fixedpt_tofloat(pi_x));
+#else
+	printf("pi as fixedpt converted to double: %0.6lf\n", fixedpt_todouble(pi_x));
+#endif
 
 	printf("e as string:\t2.71828182845904523536028747\n");
 	printf("e as float:\t%0.6f\n", e_f);
@@ -68,6 +75,16 @@ verify_trig()
 	printf("sin(e) as double:\t%0.15lf\n", sin(e_d));
 	printf("sin(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sin(e_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sin(e_x), -2)) - sin(e_d));
+
+	printf("cos(pi) as float:\t%0.6f\n", cosf(pi_f));
+	printf("cos(pi) as double:\t%0.15lf\n", cos(pi_d));
+	printf("cos(pi) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cos(pi_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cos(pi_x), -2)) - cos(pi_d));
+
+	printf("cos(e) as float:\t%0.6f\n", cosf(e_f));
+	printf("cos(e) as double:\t%0.15lf\n", cos(e_d));
+	printf("cos(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cos(e_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cos(e_x), -2)) - cos(e_d));
 
 	printf("tan(e) as float:\t%0.6f\n", tanf(e_f));
 	printf("tan(e) as double:\t%0.15lf\n", tan(e_d));
@@ -112,6 +129,11 @@ verify_powers()
 	printf("ln(e) as double:\t%0.15f\n", log(e_d));
 	printf("ln(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_ln(e_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(e_x), -2)) - log(e_d));
+
+	printf("ln(3) as float:\t%0.6f\n", logf(3));
+	printf("ln(3) as double:\t%0.15f\n", log(3));
+	printf("ln(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_ln(fixedpt_rconst(3)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(fixedpt_rconst(3)), -2)) - log(3));
 }
 
 int
@@ -123,11 +145,11 @@ main()
 
 	verify_numbers();
 	printf("\n");
-	verify_trig();
-	printf("\n");
 	verify_powers();
 	printf("\n");
 	verify_atan2();
+	verify_trig();
+	printf("\n");
 
 	return (0);
 }
