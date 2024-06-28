@@ -295,100 +295,20 @@ _FIXEDPT_FUNCTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec)
 /* Returns the square root of the given number, or -1 in case of error */
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt A)
 {
-	int invert = 0;
-	int iter = FIXEDPT_FBITS;
-	int l, i;
+    fixedpt x = A; // Initial guess
 
 	if (A < 0)
 		return (-1);
 	if (A == 0 || A == FIXEDPT_ONE)
 		return (A);
-	if (A < FIXEDPT_ONE && A > 6) {
-		invert = 1;
-		A = fixedpt_div(FIXEDPT_ONE, A);
-	}
-	if (A > FIXEDPT_ONE) {
-		int s = A;
-
-		iter = 0;
-		while (s > 0) {
-			s >>= 2;
-			iter++;
-		}
-	}
-
-	/* Newton's iterations */
-	l = (A >> 1) + 1;
-	for (i = 0; i < iter; i++)
-		l = (l + fixedpt_div(A, l)) >> 1;
-	if (invert)
-		return (fixedpt_div(FIXEDPT_ONE, l));
-	return (l);
-}
-
-
-/* Returns the sine of the given fixedpt number. 
- * Note: the loss of precision is extraordinary! */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_sin(fixedpt A)
-{
-	fixedpt sin_t, cos_t;
-
-	fixedpt_sincos(A, &sin_t, &cos_t);
-	return sin_t;
-}
-
-// {
-// 	int sign = 1;
-// 	fixedpt sqr, result;
-// 	static const fixedpt SK[2] = {
-// 		fixedpt_rconst(7.61e-03),
-// 		fixedpt_rconst(1.6605e-01)
-// 	};
-
-// 	A %= FIXEDPT_TWO_PI;
-// 	if (A < 0)
-// 		A = FIXEDPT_TWO_PI + A;
-// 	if ((A > FIXEDPT_HALF_PI) && (A <= FIXEDPT_PI)) 
-// 		A = FIXEDPT_PI - A;
-// 	else if ((A > FIXEDPT_PI) && (A <= (FIXEDPT_PI + FIXEDPT_HALF_PI))) {
-// 		A = A - FIXEDPT_PI;
-// 		sign = -1;
-// 	} else if (A > (FIXEDPT_PI + FIXEDPT_HALF_PI)) {
-// 		A = (FIXEDPT_PI << 1) - A;
-// 		sign = -1;
-// 	}
-// 	sqr = fixedpt_mul(A, A);
-// 	result = SK[0];
-// 	result = fixedpt_mul(result, sqr);
-// 	result -= SK[1];
-// 	result = fixedpt_mul(result, sqr);
-// 	result += FIXEDPT_ONE;
-// 	result = fixedpt_mul(result, A);
-// 	return sign * result;
-// }
-
-
-/* Returns the cosine of the given fixedpt number */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_cos(fixedpt A)
-{
-	fixedpt sin_t, cos_t;
 	
-	fixedpt_sincos(A, &sin_t, &cos_t);
-	return cos_t;
+	/* Using Heron’s method for 5 iterations*/
+    for(int i = 0;i < 5;i++) {
+        x = fixedpt_add(x , fixedpt_div(A, x)) >> 1;
+    }
+
+    return x;
 }
-// {
-// 	return (fixedpt_sin(FIXEDPT_HALF_PI - A));
-// }
-
-/* Returns the tangens of the given fixedpt number */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
-{
-	fixedpt sin_t, cos_t;
-
-	fixedpt_sincos(A, &sin_t, &cos_t);
-	return fixedpt_div(sin_t, cos_t);
-}
-
 
 /* Returns the value exp(x), i.e. e^x of the given fixedpt number. */
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_exp(fixedpt x)
@@ -509,13 +429,13 @@ static const fixedpt FIXEDPT_ATAN_TABLE[ITERATIONS] = {
     fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
     fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
 };
-static const fixedpt FIXEDPT_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; // K value for 32 iterations
+static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; // K value for 32 iterations
 
 // Function to compute sine and cosine using CORDIC algorithm
 _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
 {
     // Initialize variables
-    fixedpt x = FIXEDPT_CORDIC_K;
+    fixedpt x = FIXEDPT_CIRCULAR_CORDIC_K;
     fixedpt y = 0;
     fixedpt xt, yt;
     int flip_cos_sign = 0;
@@ -539,7 +459,7 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
         flip_cos_sign = 1;        
     }
 
-    // Perform CORDIC iterations
+    // Perform Rotation-mode CORDIC iterations
     for (int i = 0; i < ITERATIONS; i++) {
         if (angle < 0) {
             xt = fixedpt_add(x, (y >> i));
@@ -576,7 +496,7 @@ fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
         y = -temp;
     }
 
-    // Perform CORDIC iterations
+    // Perform Vectoring-mode CORDIC iterations
     for (int i = 0; i < ITERATIONS; i++) {
         if (y > 0) {
             xt = fixedpt_add(x, (y >> i));
@@ -592,6 +512,34 @@ fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
     }
 
     return angle;
+}
+
+/* Returns the sine of the given fixedpt number. 
+ * Note: the loss of precision is extraordinary! */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_sin(fixedpt A)
+{
+	fixedpt sin_t, cos_t;
+
+	fixedpt_sincos(A, &sin_t, &cos_t);
+	return sin_t;
+}
+
+/* Returns the cosine of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_cos(fixedpt A)
+{
+	fixedpt sin_t, cos_t;
+	
+	fixedpt_sincos(A, &sin_t, &cos_t);
+	return cos_t;
+}
+
+/* Returns the tangens of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
+{
+	fixedpt sin_t, cos_t;
+
+	fixedpt_sincos(A, &sin_t, &cos_t);
+	return fixedpt_div(sin_t, cos_t);
 }
 
 #ifdef __cplusplus

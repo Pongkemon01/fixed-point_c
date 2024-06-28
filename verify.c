@@ -134,6 +134,16 @@ verify_powers()
 	printf("ln(3) as double:\t%0.15f\n", log(3));
 	printf("ln(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_ln(fixedpt_rconst(3)), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(fixedpt_rconst(3)), -2)) - log(3));
+
+	printf("sqrt(e) as float:\t%0.6f\n", sqrtf(e_f));
+	printf("sqrt(e) as double:\t%0.15f\n", sqrt(e_d));
+	printf("sqrt(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(e_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(e_x), -2)) - sqrt(e_d));
+
+	printf("sqrt(3) as float:\t%0.6f\n", sqrtf(3));
+	printf("sqrt(3) as double:\t%0.15f\n", sqrt(3));
+	printf("sqrt(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2)) - sqrt(3));
 }
 
 int
@@ -145,10 +155,10 @@ main()
 
 	verify_numbers();
 	printf("\n");
-	verify_powers();
-	printf("\n");
 	verify_atan2();
 	verify_trig();
+	printf("\n");
+	verify_powers();
 	printf("\n");
 
 	return (0);
