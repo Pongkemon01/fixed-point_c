@@ -296,16 +296,21 @@ _FIXEDPT_FUNCTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec)
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt A)
 {
     fixedpt x = A; // Initial guess
+	fixedpt res, diff;
 
 	if (A < 0)
 		return (-1);
 	if (A == 0 || A == FIXEDPT_ONE)
 		return (A);
 	
-	/* Using Heron’s method for 5 iterations*/
-    for(int i = 0;i < 5;i++) {
-        x = fixedpt_add(x , fixedpt_div(A, x)) >> 1;
-    }
+	/* Using Heron’s method until result is changed with less than 0.00001 */
+    do {
+        res = fixedpt_add(x , fixedpt_div(A, x)) >> 1;
+		diff = res - x;
+		if( diff < 0 )
+			diff = -diff;
+		x = res;
+    }while( diff > fixedpt_rconst(0.00001));
 
     return x;
 }

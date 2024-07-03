@@ -4,7 +4,7 @@
 #include <math.h>
 #include <locale.h>
 
-//#define FIXEDPT_BITS 64
+#define FIXEDPT_BITS 64
 
 //#define FIXEDPT_WBITS 8
 
@@ -144,6 +144,16 @@ verify_powers()
 	printf("sqrt(3) as double:\t%0.15f\n", sqrt(3));
 	printf("sqrt(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2)) - sqrt(3));
+
+	printf("sqrt(1000) as float:\t%0.6f\n", sqrtf(1000));
+	printf("sqrt(1000) as double:\t%0.15f\n", sqrt(1000));
+	printf("sqrt(1000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000)), -2)) - sqrt(1000));
+
+	printf("sqrt(1000000000) as float:\t%0.6f\n", sqrtf(1000000000));
+	printf("sqrt(1000000000) as double:\t%0.15f\n", sqrt(1000000000));
+	printf("sqrt(1000000000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000000000)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000000000)), -2)) - sqrt(1000000000));
 }
 
 int
