@@ -135,6 +135,11 @@ verify_powers()
 	printf("ln(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_ln(fixedpt_rconst(3)), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(fixedpt_rconst(3)), -2)) - log(3));
 
+	printf("sqrt(0.5) as float:\t%0.6f\n", sqrtf(0.5f));
+	printf("sqrt(0.5) as double:\t%0.15f\n", sqrt(0.5));
+	printf("sqrt(0.5) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(0.5)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(0.5)), -2)) - sqrt(0.5));
+
 	printf("sqrt(e) as float:\t%0.6f\n", sqrtf(e_f));
 	printf("sqrt(e) as double:\t%0.15f\n", sqrt(e_d));
 	printf("sqrt(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(e_x), -2));
