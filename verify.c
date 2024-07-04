@@ -109,7 +109,54 @@ verify_atan2()
 	printf("atan2(x) as double:\t%0.15lf\n", atan2(-atan_3_d, atan_5_d));
 	printf("atan2(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_atan2(-atan_3_x, atan_5_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_atan2(-atan_3_x, atan_5_x), -2)) - atan2(-atan_3_d, atan_5_d));
+}
 
+void
+verify_asin()
+{
+	printf("asin(x) as float:\t%0.6f\n", asinf(atan_1_f));
+	printf("asin(x) as double:\t%0.15lf\n", asin(atan_1_d));
+	printf("asin(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_asin(atan_1_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_asin(atan_1_x), -2)) - asin(atan_1_d));
+
+	printf("asin(x) as float:\t%0.6f\n", asinf(atan_2_f));
+	printf("asin(x) as double:\t%0.15lf\n", asin(atan_2_d));
+	printf("asin(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_asin(atan_2_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_asin(atan_2_x), -2)) - asin(atan_2_d));
+
+	printf("asin(x) as float:\t%0.6f\n", asinf(atan_3_f));
+	printf("asin(x) as double:\t%0.15lf\n", asin(atan_3_d));
+	printf("asin(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_asin(atan_3_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_asin(atan_3_x), -2)) - asin(atan_3_d));
+
+	printf("asin(x) as float:\t%0.6f\n", asinf(atan_4_f));
+	printf("asin(x) as double:\t%0.15lf\n", asin(atan_4_d));
+	printf("asin(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_asin(atan_4_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_asin(atan_4_x), -2)) - asin(atan_4_d));
+}
+
+void
+verify_acos()
+{
+	printf("acos(x) as float:\t%0.6f\n", acosf(atan_1_f));
+	printf("acos(x) as double:\t%0.15lf\n", acos(atan_1_d));
+	printf("acos(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_acos(atan_1_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_acos(atan_1_x), -2)) - acos(atan_1_d));
+
+	printf("acos(x) as float:\t%0.6f\n", acosf(atan_2_f));
+	printf("acos(x) as double:\t%0.15lf\n", acos(atan_2_d));
+	printf("acos(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_acos(atan_2_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_acos(atan_2_x), -2)) - acos(atan_2_d));
+
+	printf("acos(x) as float:\t%0.6f\n", acosf(atan_3_f));
+	printf("acos(x) as double:\t%0.15lf\n", acos(atan_3_d));
+	printf("acos(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_acos(atan_3_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_acos(atan_3_x), -2)) - acos(atan_3_d));
+
+	printf("acos(x) as float:\t%0.6f\n", acosf(atan_4_f));
+	printf("acos(x) as double:\t%0.15lf\n", acos(atan_4_d));
+	printf("acos(x)) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_acos(atan_4_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_acos(atan_4_x), -2)) - acos(atan_4_d));
 }
 
 void
@@ -174,6 +221,10 @@ main()
 	verify_trig();
 	printf("\n");
 	verify_powers();
+	printf("\n");
+	verify_asin();
+	printf("\n");
+	verify_acos();
 	printf("\n");
 
 	return (0);

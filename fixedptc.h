@@ -183,6 +183,9 @@ _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt A);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt A);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_asin(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_acos(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_atan(fixedpt x);
 
 #ifdef __cplusplus
 }
@@ -306,7 +309,7 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt A)
 	/* Using Heron’s method until result is changed with less than 0.00001 */
     do {
         res = fixedpt_add(x , fixedpt_div(A, x)) >> 1;
-		diff = res - x;
+		diff = fixedpt_sub(res, x);
 		if( diff < 0 )
 			diff = -diff;
 		x = res;
@@ -410,12 +413,12 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 	return (fixedpt_exp(fixedpt_mul(fixedpt_ln(x), exp)));
 }
 
-// Function to perform the CORDIC algorithm
-// Define the number of iterations
+/* Function to perform the CORDIC algorithm
+ * Define the number of iterations */
 #define ITERATIONS 32
 
-// Constant
-// Precomputed arctangent values for the CORDIC algorithm
+/* Constant */
+/* Precomputed arctangent values for the CORDIC algorithm */
 static const fixedpt FIXEDPT_ATAN_TABLE[ITERATIONS] = {
     fixedpt_rconst(0.7853981633974483),             fixedpt_rconst(0.4636476090008061),     
     fixedpt_rconst(0.24497866312686414),            fixedpt_rconst(0.12435499454676144),
@@ -434,28 +437,28 @@ static const fixedpt FIXEDPT_ATAN_TABLE[ITERATIONS] = {
     fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
     fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
 };
-static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; // K value for 32 iterations
+static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; /* K value for 32 iterations */
 
-// Function to compute sine and cosine using CORDIC algorithm
+/* Function to compute sine and cosine using CORDIC algorithm */
 _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
 {
-    // Initialize variables
+    /* Initialize variables */
     fixedpt x = FIXEDPT_CIRCULAR_CORDIC_K;
     fixedpt y = 0;
     fixedpt xt, yt;
     int flip_cos_sign = 0;
 
-    // Perform angle normalization
-    // Normalize to [-2pi, 2pi]
+    /* Perform angle normalization */
+    /* Step 1 : Normalize to [-2pi, 2pi] */
     angle %= FIXEDPT_TWO_PI;
 
-    // Normalize to [-pi, pi]
+    /* Step 2 : Normalize to [-pi, pi] */
     if (angle < -FIXEDPT_PI) 
         angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
     if (angle > FIXEDPT_PI) 
         angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
 
-    // Normalize to [-pi/2, pi/2]
+    /* Step 3 :  Normalize to [-pi/2, pi/2] */
     if (angle > FIXEDPT_HALF_PI) {
         angle = fixedpt_sub(FIXEDPT_PI, angle);
         flip_cos_sign = 1;
@@ -464,7 +467,7 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
         flip_cos_sign = 1;        
     }
 
-    // Perform Rotation-mode CORDIC iterations
+    /* Perform Rotation-mode CORDIC iterations */
     for (int i = 0; i < ITERATIONS; i++) {
         if (angle < 0) {
             xt = fixedpt_add(x, (y >> i));
@@ -479,17 +482,18 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
         y = yt;
     }
 
-    // Store the results
+    /* Store the results */
     *cos_val = (flip_cos_sign != 0)? -x : x ;
     *sin_val = y;
 }
 
+/* Returns the arctan2 of the given x, y coordinate in fixedpt number using CORDIC algorithm */
 fixedpt fixedpt_atan2(fixedpt y, fixedpt x) 
 {
     fixedpt angle = 0;
     fixedpt xt, yt;
 
-    // Initialize angle
+    /* Initialize angle */
     if (x < 0) {
         if (y >= 0) {
             angle = FIXEDPT_HALF_PI;
@@ -501,7 +505,7 @@ fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
         y = -temp;
     }
 
-    // Perform Vectoring-mode CORDIC iterations
+    /* Perform Vectoring-mode CORDIC iterations */
     for (int i = 0; i < ITERATIONS; i++) {
         if (y > 0) {
             xt = fixedpt_add(x, (y >> i));
@@ -545,6 +549,56 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
 
 	fixedpt_sincos(A, &sin_t, &cos_t);
 	return fixedpt_div(sin_t, cos_t);
+}
+
+/* Returns the arcsin of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_asin(fixedpt x)
+{
+	/* Ensure input is within valid range (-1 to 1) */
+	if (x > FIXEDPT_ONE || x < -FIXEDPT_ONE) 
+	{
+		return x;
+	}
+
+	/* Handle special cases (x = ±1) */
+	if (x == FIXEDPT_ONE) 
+	{
+		return FIXEDPT_HALF_PI;
+	} 
+	else if (x == -FIXEDPT_ONE) 
+	{
+		return -FIXEDPT_HALF_PI;
+	}
+
+	return fixedpt_atan2(x, fixedpt_sqrt(fixedpt_sub(FIXEDPT_ONE, fixedpt_mul(x, x))));
+}
+
+/* Returns the arccos of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_acos(fixedpt x)
+{
+	/* Ensure input is within valid range (-1 to 1) */
+	if (x > FIXEDPT_ONE || x < -FIXEDPT_ONE) 
+	{
+		return x;
+	}
+
+	/* Handle special cases (x = ±1) */
+	if (x == FIXEDPT_ONE) 
+	{
+		return 0;
+	} 
+	else if (x == -FIXEDPT_ONE) 
+	{
+		return FIXEDPT_PI;
+	}
+
+	return fixedpt_atan2(fixedpt_sqrt(fixedpt_sub(FIXEDPT_ONE, fixedpt_mul(x, x))), x);
+}
+
+/* Returns the arctan of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt x)
+{
+	return (fixedpt_atan2(x, 1));
 }
 
 #ifdef __cplusplus
