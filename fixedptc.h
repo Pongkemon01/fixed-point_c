@@ -186,6 +186,7 @@ _FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt A);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_asin(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_acos(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_bitwise_sqrt(fixedpt A);
 
 #ifdef __cplusplus
 }
@@ -415,11 +416,53 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 
 /* Function to perform the CORDIC algorithm
  * Define the number of iterations */
-#define ITERATIONS 32
+#define MAX_ITERATIONS 16
+
+#ifndef ITERATIONS
+	#define ITERATIONS 16
+#endif
+
+#if ITERATIONS > MAX_ITERATIONS
+	#undef ITEERATIONS
+	#define ITERATIONS MAX_TERATIONS
+#endif
 
 /* Constant */
-/* Precomputed arctangent values for the CORDIC algorithm */
-static const fixedpt FIXEDPT_ATAN_TABLE[ITERATIONS] = {
+
+/*
+// Cordic table in 8087
+1.570796×2-1	0.7853982	atan(20)
+1.854590×2-2	0.4636476	atan(2-1)
+1.959829×2-3	0.2449787	atan(2-2)
+1.989680×2-4	0.1243550	atan(2-3)
+1.997402×2-5	0.0624188	atan(2-4)
+1.999349×2-6	0.0312398	atan(2-5)
+1.999837×2-7	0.0156237	atan(2-6)
+1.999959×2-8	0.0078123	atan(2-7)
+1.999990×2-9	0.0039062	atan(2-8)
+1.999997×2-10	0.0019531	atan(2-9)
+1.999999×2-11	0.0009766	atan(2-10)
+2.000000×2-12	0.0004883	atan(2-11)
+2.000000×2-13	0.0002441	atan(2-12)
+2.000000×2-14	0.0001221	atan(2-13)
+2.000000×2-15	0.0000610	atan(2-14)
+2.000000×2-16	0.0000305	atan(2-15)
+*/
+
+
+// static const fixedpt FIXEDPT_ATAN_TABLE[MAX_ITERATIONS] = {
+//     fixedpt_rconst(0.7853982),  fixedpt_rconst(0.4636476),     
+//     fixedpt_rconst(0.2449787),  fixedpt_rconst(0.1243550),
+//     fixedpt_rconst(0.0624188),  fixedpt_rconst(0.0312398),   
+//     fixedpt_rconst(0.0156237),  fixedpt_rconst(0.0078123),
+//     fixedpt_rconst(0.0039062),  fixedpt_rconst(0.0019531),  
+//     fixedpt_rconst(0.0009766),  fixedpt_rconst(0.0004883),
+//     fixedpt_rconst(0.0002441),  fixedpt_rconst(0.0001221), 
+//     fixedpt_rconst(0.0000610),  fixedpt_rconst(0.0000305)
+// };
+
+/* Precomputed arctangent values for the circular CORDIC algorithm */
+static const fixedpt FIXEDPT_ATAN_TABLE[MAX_ITERATIONS] = {
     fixedpt_rconst(0.7853981633974483),             fixedpt_rconst(0.4636476090008061),     
     fixedpt_rconst(0.24497866312686414),            fixedpt_rconst(0.12435499454676144),
     fixedpt_rconst(0.06241880999595735),            fixedpt_rconst(0.031239833430268277),   
@@ -428,16 +471,17 @@ static const fixedpt FIXEDPT_ATAN_TABLE[ITERATIONS] = {
     fixedpt_rconst(0.0009765621895593195),          fixedpt_rconst(0.0004882812111948983),
     fixedpt_rconst(0.00024414062014936177),         fixedpt_rconst(0.00012207031189367021), 
     fixedpt_rconst(0.00006103515617420877),         fixedpt_rconst(0.000030517578115526096),
-    fixedpt_rconst(0.000015258789061315762),        fixedpt_rconst(0.00000762939453110197),
-    fixedpt_rconst(0.000003814697265606496),        fixedpt_rconst(0.000001907348632810187),
-    fixedpt_rconst(0.0000009536743164059606),       fixedpt_rconst(0.0000004768371582030885), 
-    fixedpt_rconst(0.00000023841857910155712),      fixedpt_rconst(0.00000011920928955078059),
-    fixedpt_rconst(0.000000059604644775390625),     fixedpt_rconst(0.000000029802322387695312), 
-    fixedpt_rconst(0.000000014901161193847656),     fixedpt_rconst(0.000000007450580596923828),
-    fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
-    fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
+//     fixedpt_rconst(0.000015258789061315762),        fixedpt_rconst(0.00000762939453110197),
+//     fixedpt_rconst(0.000003814697265606496),        fixedpt_rconst(0.000001907348632810187),
+//     fixedpt_rconst(0.0000009536743164059606),       fixedpt_rconst(0.0000004768371582030885), 
+//     fixedpt_rconst(0.00000023841857910155712),      fixedpt_rconst(0.00000011920928955078059),
+//     fixedpt_rconst(0.000000059604644775390625),     fixedpt_rconst(0.000000029802322387695312), 
+//     fixedpt_rconst(0.000000014901161193847656),     fixedpt_rconst(0.000000007450580596923828),
+//     fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
+//     fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
 };
-static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; /* K value for 32 iterations */
+//static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; /* K value for 32 iterations */
+static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.60725303) ; /* K value for 16 iterations */
 
 /* Function to compute sine and cosine using CORDIC algorithm */
 _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
@@ -450,7 +494,10 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
 
     /* Perform angle normalization */
     /* Step 1 : Normalize to [-2pi, 2pi] */
-    angle %= FIXEDPT_TWO_PI;
+	while (angle >= FIXEDPT_TWO_PI)
+		angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
+	while (angle <= -FIXEDPT_TWO_PI)
+		angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
 
     /* Step 2 : Normalize to [-pi, pi] */
     if (angle < -FIXEDPT_PI) 
@@ -488,7 +535,7 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
 }
 
 /* Returns the arctan2 of the given x, y coordinate in fixedpt number using CORDIC algorithm */
-fixedpt fixedpt_atan2(fixedpt y, fixedpt x) 
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x) 
 {
     fixedpt angle = 0;
     fixedpt xt, yt;
@@ -507,7 +554,7 @@ fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
 
     /* Perform Vectoring-mode CORDIC iterations */
     for (int i = 0; i < ITERATIONS; i++) {
-        if (y > 0) {
+        if (y >= 0) {
             xt = fixedpt_add(x, (y >> i));
             yt = fixedpt_sub(y, (x >> i));
             angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
@@ -599,6 +646,94 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_acos(fixedpt x)
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt x)
 {
 	return (fixedpt_atan2(x, 1));
+}
+
+// /* Implementation of LOG and EXP function using CORDIC.
+//    The constants ITERATIONS and MAX_ITERATIONS are defined for circular CORDIC above.
+// */
+// /* Constant */
+// /* Precomputed arctangent values for the circular CORDIC algorithm */
+// static const fixedpt FIXEDPT_ATANH_TABLE[MAX_ITERATIONS] = {
+//     fixedpt_rconst(0.5493061443340549),     fixedpt_rconst(0.2554128118829954),
+//     fixedpt_rconst(0.1256572141404531),     fixedpt_rconst(0.0625815714770030),
+//     fixedpt_rconst(0.0312601784906670),     fixedpt_rconst(0.0156262717520522),
+//     fixedpt_rconst(0.0078126589515404),     fixedpt_rconst(0.0039062698683968),
+//     fixedpt_rconst(0.0019531274835326),     fixedpt_rconst(0.0009765628104410),
+//     fixedpt_rconst(0.0004882812888051),     fixedpt_rconst(0.0002441406298506),
+//     fixedpt_rconst(0.0001220703131063),     fixedpt_rconst(0.0000610351563258),
+//     fixedpt_rconst(0.0000305175781345),     fixedpt_rconst(0.0000152587890637),
+//     fixedpt_rconst(0.0000076293945314),     fixedpt_rconst(0.0000038146972656),
+//     fixedpt_rconst(0.0000019073486328),     fixedpt_rconst(0.0000009536743164),
+//     fixedpt_rconst(0.0000004768371582),     fixedpt_rconst(0.0000002384185791),
+//     fixedpt_rconst(0.0000001192092896),     fixedpt_rconst(0.0000000596046448),
+//     fixedpt_rconst(0.0000000298023224),     fixedpt_rconst(0.0000000149011612),
+//     fixedpt_rconst(0.0000000074505806),     fixedpt_rconst(0.0000000037252903),
+//     fixedpt_rconst(0.0000000018626451),     fixedpt_rconst(0.0000000009313226),
+//     fixedpt_rconst(0.0000000004656613),     fixedpt_rconst(0.0000000002328306)
+// };
+// static const fixedpt FIXEDPT_HYPERBOLIC_CORDIC_K = fixedpt_rconst(1.207497067763) ; /* K value for 32 iterations */
+
+
+// /* Returns the natural logarithm of the given fixedpt number. */
+// _FIXEDPT_FUNCTYPE fixedpt fixedpt_cordic_ln(fixedpt x)
+// {
+//     fixedpt xt = fixedpt_add(x, FIXEDPT_ONE);
+//     fixedpt yt = fixedpt_sub(x, FIXEDPT_ONE);
+//     fixedpt zt = 0;
+
+//     fixedpt x_new, y_new;
+
+//     // Perform iterations (vector mode)
+//     for (int i = 0; i < ITERATIONS; i++) 
+//     {
+//         if( yt < 0 )
+//         {
+//             x_new = fixedpt_add(xt, (yt >> (i + 1)));
+//             y_new = fixedpt_add(yt, (xt >> (i + 1)));
+//             zt = fixedpt_sub(zt, FIXEDPT_ATANH_TABLE[i]);
+//         }
+//         else
+//         {
+//             x_new = fixedpt_sub(xt, (yt >> (i + 1)));
+//             y_new = fixedpt_sub(yt, (xt >> (i + 1)));
+//             zt = fixedpt_add(zt, FIXEDPT_ATANH_TABLE[i]);
+//         }
+//         xt = x_new;
+//         yt = y_new;
+//     }
+
+//     return zt << 1;  // log(value)
+// }
+
+/* Returns the square root of the given number, or -1 in case of error */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_bitwise_sqrt(fixedpt A)
+{
+    fixedpt res = 0;
+    fixedpt bit = (fixedpt)1 << (FIXEDPT_BITS - 2); // The second highest bit set
+	fixedpt tmp;
+	
+	if (A < 0)
+		return (-1);
+	if (A == 0 || A == FIXEDPT_ONE)
+		return (A);
+
+    // "bit" starts at the highest power of four <= the input value.
+    while(bit > A) {
+        bit >>= 2;
+    }
+
+    while(bit != 0) {
+		tmp = fixedpt_add(res, bit);
+        if(A >= tmp) {
+            A = fixedpt_sub(A, tmp);
+            res = fixedpt_add((res >> 1), bit);
+        } else {
+            res >>= 1;
+        }
+        bit >>= 2;
+    }
+
+    return res << (FIXEDPT_FBITS >> 1);;
 }
 
 #ifdef __cplusplus

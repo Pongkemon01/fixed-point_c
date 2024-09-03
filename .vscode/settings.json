@@ -2,6 +2,8 @@
     "C_Cpp.default.compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
     "files.associations": {
         "fixedptc.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "type_traits": "c",
+        "stdlib.h": "c"
     }
 }
