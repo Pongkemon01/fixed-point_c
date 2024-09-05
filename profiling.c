@@ -95,13 +95,6 @@ void calculate_sqrt() {
     }
 }
 
-void calculate_bit_sqrt() {
-    volatile fixedpt result;
-    for (int i = 0; i < PROFILE_ITERATIONS; i++) {
-        result = fixedpt_bit_sqrt(x_profile);
-    }
-}
-
 int main() {
     uint64_t time_dif;
     stdio_init_all();
@@ -128,8 +121,6 @@ int main() {
         time_dif = measure_time_us(calculate_sqrt);
         printf("Time taken by sqrt function: %llu microseconds\n", time_dif);
 
-        time_dif = measure_time_us(calculate_bit_sqrt);
-        printf("Time taken by bitwise sqrt function: %llu microseconds\n", time_dif);
         printf("\n\n\n");
         sleep_ms(5000);
     }

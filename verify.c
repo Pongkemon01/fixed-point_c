@@ -6,7 +6,7 @@
 
 #define FIXEDPT_BITS 32
 
-//#define FIXEDPT_WBITS 8
+//#define FIXEDPT_WBITS 16
 
 #define _FIXEDPT_STATIC
 #include "fixedptc.h"
@@ -162,41 +162,6 @@ verify_acos()
 void
 verify_powers()
 {
-	printf("sqrt(0.5) as float:\t%0.6f\n", sqrtf(0.5f));
-	printf("sqrt(0.5) as double:\t%0.15f\n", sqrt(0.5));
-	printf("sqrt(0.5) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(0.5)), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(0.5)), -2)) - sqrt(0.5));
-	printf("sqrt(0.5) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_bitwise_sqrt(fixedpt_rconst(0.5)), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_bitwise_sqrt(fixedpt_rconst(0.5)), -2)) - sqrt(0.5));
-
-	printf("sqrt(e) as float:\t%0.6f\n", sqrtf(e_f));
-	printf("sqrt(e) as double:\t%0.15f\n", sqrt(e_d));
-	printf("sqrt(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(e_x), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(e_x), -2)) - sqrt(e_d));
-	printf("sqrt(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_bitwise_sqrt(e_x), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_bitwise_sqrt(e_x), -2)) - sqrt(e_d));
-
-	printf("sqrt(3) as float:\t%0.6f\n", sqrtf(3));
-	printf("sqrt(3) as double:\t%0.15f\n", sqrt(3));
-	printf("sqrt(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2)) - sqrt(3));
-	printf("sqrt(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_bitwise_sqrt(fixedpt_rconst(3)), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_bitwise_sqrt(fixedpt_rconst(3)), -2)) - sqrt(3));
-
-	printf("sqrt(1000) as float:\t%0.6f\n", sqrtf(1000));
-	printf("sqrt(1000) as double:\t%0.15f\n", sqrt(1000));
-	printf("sqrt(1000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000)), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000)), -2)) - sqrt(1000));
-	printf("sqrt(1000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_bitwise_sqrt(fixedpt_rconst(1000)), -2));
-	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_bitwise_sqrt(fixedpt_rconst(1000)), -2)) - sqrt(1000));
-
-	// printf("sqrt(1000000000) as float:\t%0.6f\n", sqrtf(1000000000));
-	// printf("sqrt(1000000000) as double:\t%0.15f\n", sqrt(1000000000));
-	// printf("sqrt(1000000000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000000000)), -2));
-	// printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000000000)), -2)) - sqrt(1000000000));
-	// printf("sqrt(1000000000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_bit_sqrt(fixedpt_rconst(1000000000)), -2));
-	// printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_bit_sqrt(fixedpt_rconst(1000000000)), -2)) - sqrt(1000000000));
-
 	printf("pow(pi,3) as float:\t%0.6f\n", powf(pi_f, 3));
 	printf("pow(pi,3) as double:\t%0.15f\n", pow(pi_d, 3));
 	printf("pow(pi,3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_pow(pi_x, fixedpt_rconst(3)), -2));
@@ -220,6 +185,26 @@ verify_powers()
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(fixedpt_rconst(50)), -2)) - log(50));
 	// printf("cordic ln(50) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cordic_ln(fixedpt_rconst(50)), -2));
 	// printf("  delta cordic_fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cordic_ln(fixedpt_rconst(50)), -2)) - log(50));
+
+	printf("sqrt(0.5) as float:\t%0.6f\n", sqrtf(0.5f));
+	printf("sqrt(0.5) as double:\t%0.15f\n", sqrt(0.5));
+	printf("sqrt(0.5) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(0.5)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(0.5)), -2)) - sqrt(0.5));
+
+	printf("sqrt(e) as float:\t%0.6f\n", sqrtf(e_f));
+	printf("sqrt(e) as double:\t%0.15f\n", sqrt(e_d));
+	printf("sqrt(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(e_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(e_x), -2)) - sqrt(e_d));
+
+	printf("sqrt(3) as float:\t%0.6f\n", sqrtf(3));
+	printf("sqrt(3) as double:\t%0.15f\n", sqrt(3));
+	printf("sqrt(3) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(3)), -2)) - sqrt(3));
+
+	printf("sqrt(1000) as float:\t%0.6f\n", sqrtf(1000));
+	printf("sqrt(1000) as double:\t%0.15f\n", sqrt(1000));
+	printf("sqrt(1000) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000)), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sqrt(fixedpt_rconst(1000)), -2)) - sqrt(1000));
 }
 
 int
