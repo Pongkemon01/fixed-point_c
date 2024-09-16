@@ -6,7 +6,7 @@
 
 #define FIXEDPT_BITS 32
 
-//#define FIXEDPT_WBITS 16
+#define FIXEDPT_WBITS 16
 
 #define _FIXEDPT_STATIC
 #include "fixedptc.h"

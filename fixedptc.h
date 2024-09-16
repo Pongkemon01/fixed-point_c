@@ -459,10 +459,10 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 
 /* Function to perform the CORDIC algorithm
  * Define the number of iterations */
-#define MAX_ITERATIONS 16
+#define MAX_ITERATIONS 32
 
 #ifndef ITERATIONS
-	#define ITERATIONS 16
+	#define ITERATIONS FIXEDPT_FBITS
 #endif
 
 #if ITERATIONS > MAX_ITERATIONS
@@ -514,17 +514,17 @@ static const fixedpt FIXEDPT_ATAN_TABLE[MAX_ITERATIONS] = {
     fixedpt_rconst(0.0009765621895593195),          fixedpt_rconst(0.0004882812111948983),
     fixedpt_rconst(0.00024414062014936177),         fixedpt_rconst(0.00012207031189367021), 
     fixedpt_rconst(0.00006103515617420877),         fixedpt_rconst(0.000030517578115526096),
-//     fixedpt_rconst(0.000015258789061315762),        fixedpt_rconst(0.00000762939453110197),
-//     fixedpt_rconst(0.000003814697265606496),        fixedpt_rconst(0.000001907348632810187),
-//     fixedpt_rconst(0.0000009536743164059606),       fixedpt_rconst(0.0000004768371582030885), 
-//     fixedpt_rconst(0.00000023841857910155712),      fixedpt_rconst(0.00000011920928955078059),
-//     fixedpt_rconst(0.000000059604644775390625),     fixedpt_rconst(0.000000029802322387695312), 
-//     fixedpt_rconst(0.000000014901161193847656),     fixedpt_rconst(0.000000007450580596923828),
-//     fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
-//     fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
+    fixedpt_rconst(0.000015258789061315762),        fixedpt_rconst(0.00000762939453110197),
+    fixedpt_rconst(0.000003814697265606496),        fixedpt_rconst(0.000001907348632810187),
+    fixedpt_rconst(0.0000009536743164059606),       fixedpt_rconst(0.0000004768371582030885), 
+    fixedpt_rconst(0.00000023841857910155712),      fixedpt_rconst(0.00000011920928955078059),
+    fixedpt_rconst(0.000000059604644775390625),     fixedpt_rconst(0.000000029802322387695312), 
+    fixedpt_rconst(0.000000014901161193847656),     fixedpt_rconst(0.000000007450580596923828),
+    fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
+    fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
 };
-//static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; /* K value for 32 iterations */
-static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.60725303) ; /* K value for 16 iterations */
+static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; /* K value for 32 iterations */
+//static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.60725303) ; /* K value for 16 iterations */
 
 /* Function to compute sine and cosine using CORDIC algorithm */
 _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
