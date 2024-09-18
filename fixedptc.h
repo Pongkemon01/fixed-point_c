@@ -459,15 +459,15 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 
 /* Function to perform the CORDIC algorithm
  * Define the number of iterations */
-#define MAX_ITERATIONS 32
+#define MAX_CORDIC_ITERATIONS 32
 
-#ifndef ITERATIONS
-	#define ITERATIONS FIXEDPT_FBITS
+#ifndef CORDIC_ITERATIONS
+	#define CORDIC_ITERATIONS FIXEDPT_FBITS
 #endif
 
-#if ITERATIONS > MAX_ITERATIONS
-	#undef ITEERATIONS
-	#define ITERATIONS MAX_TERATIONS
+#if CORDIC_ITERATIONS > MAX_CORDIC_ITERATIONS
+	#undef CORDIC_ITERATIONS
+	#define CORDIC_ITERATIONS MAX_CORDIC_ITERATIONS
 #endif
 
 /* Constant */
@@ -505,7 +505,7 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 // };
 
 /* Precomputed arctangent values for the circular CORDIC algorithm */
-static const fixedpt FIXEDPT_ATAN_TABLE[MAX_ITERATIONS] = {
+static const fixedpt FIXEDPT_ATAN_TABLE[MAX_CORDIC_ITERATIONS] = {
     fixedpt_rconst(0.7853981633974483),             fixedpt_rconst(0.4636476090008061),     
     fixedpt_rconst(0.24497866312686414),            fixedpt_rconst(0.12435499454676144),
     fixedpt_rconst(0.06241880999595735),            fixedpt_rconst(0.031239833430268277),   
@@ -558,7 +558,7 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
     }
 
     /* Perform Rotation-mode CORDIC iterations */
-    for (int i = 0; i < ITERATIONS; i++) {
+    for (int i = 0; i < CORDIC_ITERATIONS; i++) {
         if (angle < 0) {
             xt = fixedpt_add(x, (y >> i));
             yt = fixedpt_sub(y, (x >> i));
@@ -596,7 +596,7 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
     }
 
     /* Perform Vectoring-mode CORDIC iterations */
-    for (int i = 0; i < ITERATIONS; i++) {
+    for (int i = 0; i < CORDIC_ITERATIONS; i++) {
         if (y >= 0) {
             xt = fixedpt_add(x, (y >> i));
             yt = fixedpt_sub(y, (x >> i));
@@ -692,11 +692,11 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt x)
 }
 
 // /* Implementation of LOG and EXP function using CORDIC.
-//    The constants ITERATIONS and MAX_ITERATIONS are defined for circular CORDIC above.
+//    The constants CORDIC_ITERATIONS and MAX_CORDIC_ITERATIONS are defined for circular CORDIC above.
 // */
 // /* Constant */
 // /* Precomputed arctangent values for the circular CORDIC algorithm */
-// static const fixedpt FIXEDPT_ATANH_TABLE[MAX_ITERATIONS] = {
+// static const fixedpt FIXEDPT_ATANH_TABLE[MAX_CORDIC_ITERATIONS] = {
 //     fixedpt_rconst(0.5493061443340549),     fixedpt_rconst(0.2554128118829954),
 //     fixedpt_rconst(0.1256572141404531),     fixedpt_rconst(0.0625815714770030),
 //     fixedpt_rconst(0.0312601784906670),     fixedpt_rconst(0.0156262717520522),
@@ -727,7 +727,7 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt x)
 //     fixedpt x_new, y_new;
 
 //     // Perform iterations (vector mode)
-//     for (int i = 0; i < ITERATIONS; i++) 
+//     for (int i = 0; i < CORDIC_ITERATIONS; i++) 
 //     {
 //         if( yt < 0 )
 //         {
