@@ -6,7 +6,7 @@
 
 #define FIXEDPT_BITS 32
 
-#define FIXEDPT_WBITS 16
+//#define FIXEDPT_WBITS 16
 
 #define _FIXEDPT_STATIC
 #include "fixedptc.h"
@@ -176,15 +176,11 @@ verify_powers()
 	printf("ln(e) as double:\t%0.15f\n", log(e_d));
 	printf("ln(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_ln(e_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(e_x), -2)) - log(e_d));
-	// printf("cordic ln(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cordic_ln(e_x), -2));
-	// printf("  delta coddic_fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cordic_ln(e_x), -2)) - log(e_d));
 
 	printf("ln(50) as float:\t%0.6f\n", logf(50));
 	printf("ln(50) as double:\t%0.15f\n", log(50));
 	printf("ln(50) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_ln(fixedpt_rconst(50)), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_ln(fixedpt_rconst(50)), -2)) - log(50));
-	// printf("cordic ln(50) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cordic_ln(fixedpt_rconst(50)), -2));
-	// printf("  delta cordic_fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cordic_ln(fixedpt_rconst(50)), -2)) - log(50));
 
 	printf("sqrt(0.5) as float:\t%0.6f\n", sqrtf(0.5f));
 	printf("sqrt(0.5) as double:\t%0.15f\n", sqrt(0.5));

@@ -294,7 +294,6 @@ _FIXEDPT_FUNCTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec)
 	return (str);
 }
 
-
 /* 
 	Returns the square root of the given number, or -1 in case of error 
 
@@ -338,7 +337,6 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt x)
         bit >>= 2;
     }
 
-	//printf("For Debug: FIXEDPT_ONE = %u\tFIXEDPT_OVERFLOW_ONE = %u\tA = %u\tres = %u\tbit = %u\n", FIXEDPT_ONE, FIXEDPT_OVERFLOW_ONE, A, res, bit);
 	/* Process again to get the lowest (FIXEDPT_FBITS / 2) bit */
 	A <<= FIXEDPT_SQRT_SHIFT;
 	res <<= FIXEDPT_SQRT_SHIFT;
@@ -460,6 +458,11 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 /* Function to perform the CORDIC algorithm
  * Define the number of iterations */
 #define MAX_CORDIC_ITERATIONS 32
+#if FIXEDPT_BITS == 32
+#define MIN_CORDIC_ITERATIONS 10
+#else
+#define MIN_CORDIC_ITERATIONS 16
+#endif
 
 #ifndef CORDIC_ITERATIONS
 	#define CORDIC_ITERATIONS FIXEDPT_FBITS
@@ -468,6 +471,11 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 #if CORDIC_ITERATIONS > MAX_CORDIC_ITERATIONS
 	#undef CORDIC_ITERATIONS
 	#define CORDIC_ITERATIONS MAX_CORDIC_ITERATIONS
+#endif
+
+#if CORDIC_ITERATIONS < MIN_CORDIC_ITERATIONS
+	#undef CORDIC_ITERATIONS
+	#define CORDIC_ITERATIONS MIN_CORDIC_ITERATIONS
 #endif
 
 /* Constant */
@@ -492,18 +500,6 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 2.000000×2-16	0.0000305	atan(2-15)
 */
 
-
-// static const fixedpt FIXEDPT_ATAN_TABLE[MAX_ITERATIONS] = {
-//     fixedpt_rconst(0.7853982),  fixedpt_rconst(0.4636476),     
-//     fixedpt_rconst(0.2449787),  fixedpt_rconst(0.1243550),
-//     fixedpt_rconst(0.0624188),  fixedpt_rconst(0.0312398),   
-//     fixedpt_rconst(0.0156237),  fixedpt_rconst(0.0078123),
-//     fixedpt_rconst(0.0039062),  fixedpt_rconst(0.0019531),  
-//     fixedpt_rconst(0.0009766),  fixedpt_rconst(0.0004883),
-//     fixedpt_rconst(0.0002441),  fixedpt_rconst(0.0001221), 
-//     fixedpt_rconst(0.0000610),  fixedpt_rconst(0.0000305)
-// };
-
 /* Precomputed arctangent values for the circular CORDIC algorithm */
 static const fixedpt FIXEDPT_ATAN_TABLE[MAX_CORDIC_ITERATIONS] = {
     fixedpt_rconst(0.7853981633974483),             fixedpt_rconst(0.4636476090008061),     
@@ -523,14 +519,13 @@ static const fixedpt FIXEDPT_ATAN_TABLE[MAX_CORDIC_ITERATIONS] = {
     fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
     fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
 };
-static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.6072529350088812561694) ; /* K value for 32 iterations */
-//static const fixedpt FIXEDPT_CIRCULAR_CORDIC_K = fixedpt_rconst(0.60725303) ; /* K value for 16 iterations */
+static const fixedpt FIXEDPT_CIRCULAR_CORDIC_INVERSE_K = fixedpt_rconst(0.607252935) ; /* Universal fixed-point 1/K value */
 
 /* Function to compute sine and cosine using CORDIC algorithm */
 _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
 {
     /* Initialize variables */
-    fixedpt x = FIXEDPT_CIRCULAR_CORDIC_K;
+    fixedpt x = FIXEDPT_CIRCULAR_CORDIC_INVERSE_K;
     fixedpt y = 0;
     fixedpt xt, yt;
     int flip_cos_sign = 0;
@@ -690,64 +685,6 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt x)
 {
 	return (fixedpt_atan2(x, 1));
 }
-
-// /* Implementation of LOG and EXP function using CORDIC.
-//    The constants CORDIC_ITERATIONS and MAX_CORDIC_ITERATIONS are defined for circular CORDIC above.
-// */
-// /* Constant */
-// /* Precomputed arctangent values for the circular CORDIC algorithm */
-// static const fixedpt FIXEDPT_ATANH_TABLE[MAX_CORDIC_ITERATIONS] = {
-//     fixedpt_rconst(0.5493061443340549),     fixedpt_rconst(0.2554128118829954),
-//     fixedpt_rconst(0.1256572141404531),     fixedpt_rconst(0.0625815714770030),
-//     fixedpt_rconst(0.0312601784906670),     fixedpt_rconst(0.0156262717520522),
-//     fixedpt_rconst(0.0078126589515404),     fixedpt_rconst(0.0039062698683968),
-//     fixedpt_rconst(0.0019531274835326),     fixedpt_rconst(0.0009765628104410),
-//     fixedpt_rconst(0.0004882812888051),     fixedpt_rconst(0.0002441406298506),
-//     fixedpt_rconst(0.0001220703131063),     fixedpt_rconst(0.0000610351563258),
-//     fixedpt_rconst(0.0000305175781345),     fixedpt_rconst(0.0000152587890637),
-//     fixedpt_rconst(0.0000076293945314),     fixedpt_rconst(0.0000038146972656),
-//     fixedpt_rconst(0.0000019073486328),     fixedpt_rconst(0.0000009536743164),
-//     fixedpt_rconst(0.0000004768371582),     fixedpt_rconst(0.0000002384185791),
-//     fixedpt_rconst(0.0000001192092896),     fixedpt_rconst(0.0000000596046448),
-//     fixedpt_rconst(0.0000000298023224),     fixedpt_rconst(0.0000000149011612),
-//     fixedpt_rconst(0.0000000074505806),     fixedpt_rconst(0.0000000037252903),
-//     fixedpt_rconst(0.0000000018626451),     fixedpt_rconst(0.0000000009313226),
-//     fixedpt_rconst(0.0000000004656613),     fixedpt_rconst(0.0000000002328306)
-// };
-// static const fixedpt FIXEDPT_HYPERBOLIC_CORDIC_K = fixedpt_rconst(1.207497067763) ; /* K value for 32 iterations */
-
-
-// /* Returns the natural logarithm of the given fixedpt number. */
-// _FIXEDPT_FUNCTYPE fixedpt fixedpt_cordic_ln(fixedpt x)
-// {
-//     fixedpt xt = fixedpt_add(x, FIXEDPT_ONE);
-//     fixedpt yt = fixedpt_sub(x, FIXEDPT_ONE);
-//     fixedpt zt = 0;
-
-//     fixedpt x_new, y_new;
-
-//     // Perform iterations (vector mode)
-//     for (int i = 0; i < CORDIC_ITERATIONS; i++) 
-//     {
-//         if( yt < 0 )
-//         {
-//             x_new = fixedpt_add(xt, (yt >> (i + 1)));
-//             y_new = fixedpt_add(yt, (xt >> (i + 1)));
-//             zt = fixedpt_sub(zt, FIXEDPT_ATANH_TABLE[i]);
-//         }
-//         else
-//         {
-//             x_new = fixedpt_sub(xt, (yt >> (i + 1)));
-//             y_new = fixedpt_sub(yt, (xt >> (i + 1)));
-//             zt = fixedpt_add(zt, FIXEDPT_ATANH_TABLE[i]);
-//         }
-//         xt = x_new;
-//         yt = y_new;
-//     }
-
-//     return zt << 1;  // log(value)
-// }
-
 
 #ifdef __cplusplus
 }
