@@ -527,7 +527,7 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
     /* Initialize variables */
     fixedpt x = FIXEDPT_CIRCULAR_CORDIC_INVERSE_K;
     fixedpt y = 0;
-    fixedpt xt, yt;
+    fixedpt xt;
     int flip_cos_sign = 0;
 
     /* Perform angle normalization */
@@ -556,15 +556,14 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
     for (int i = 0; i < CORDIC_ITERATIONS; i++) {
         if (angle < 0) {
             xt = fixedpt_add(x, (y >> i));
-            yt = fixedpt_sub(y, (x >> i));
+            y = fixedpt_sub(y, (x >> i));
             angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
         } else {
             xt = fixedpt_sub(x, (y >> i));
-            yt = fixedpt_add(y, (x >> i));
+            y = fixedpt_add(y, (x >> i));
             angle = fixedpt_sub(angle, FIXEDPT_ATAN_TABLE[i]);
         }
         x = xt;
-        y = yt;
     }
 
     /* Store the results */
@@ -576,7 +575,7 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x) 
 {
     fixedpt angle = 0;
-    fixedpt xt, yt;
+    fixedpt xt;
 
     /* Initialize angle */
     if (x < 0) {
@@ -594,15 +593,14 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
     for (int i = 0; i < CORDIC_ITERATIONS; i++) {
         if (y >= 0) {
             xt = fixedpt_add(x, (y >> i));
-            yt = fixedpt_sub(y, (x >> i));
+            y = fixedpt_sub(y, (x >> i));
             angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
         } else {
             xt = fixedpt_sub(x, (y >> i));
-            yt = fixedpt_add(y, (x >> i));
+            y = fixedpt_add(y, (x >> i));
             angle = fixedpt_sub(angle, FIXEDPT_ATAN_TABLE[i]);
         }
         x = xt;
-        y = yt;
     }
 
     return angle;
