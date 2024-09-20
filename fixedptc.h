@@ -173,7 +173,7 @@ _FIXEDPT_PROTOTYPE fixedpt fixedpt_mul(fixedpt A, fixedpt B);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_div(fixedpt A, fixedpt B);
 _FIXEDPT_PROTOTYPE void fixedpt_str(fixedpt A, char *str, int max_dec);
 _FIXEDPT_PROTOTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_sqrt(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_sqrt(fixedpt A);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_exp(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_ln(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_log(fixedpt x, fixedpt base);
@@ -294,71 +294,40 @@ _FIXEDPT_FUNCTYPE char* fixedpt_cstr(const fixedpt A, const int max_dec)
 	return (str);
 }
 
-/* 
-	Returns the square root of the given number, or -1 in case of error 
-
-	The square root algorithm is quite directly from
- 	http://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
- 	An important difference is that it is split to two parts in order to avoid double precision nunber.
-	This modification came from https://github.com/PetteriAimonen/libfixmath/blob/master/libfixmath/fix16_sqrt.c
-*/
-#if (FIXEDPT_WBITS <= FIXEDPT_FBITS)
-	#define FIXEDPT_SQRT_SHIFT			(FIXEDPT_WBITS)
-	#define FIXEDPT_SQRT_FINAL_SHIFT	((FIXEDPT_FBITS - FIXEDPT_WBITS) >> 1)
-#else
-	#define FIXEDPT_SHIFT			(FIXEDPT_FBITS)
-	#define FIXEDPT_FINAL_SHIFT		(0)
-#endif
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt x)
+/* Returns the square root of the given number, or -1 in case of error */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_sqrt(fixedpt A)
 {
-    fixedptu res = 0;
-    fixedptu bit = (fixedptu)1 << (FIXEDPT_BITS - 2); // The second highest bit set
-	fixedptu tmp;
-	fixedptu A = (fixedptu)x;
-	
-	if (x < 0)
+	int invert = 0;
+	int iter = FIXEDPT_FBITS;
+	fixedpt l;
+    int i;
+
+	if (A < 0)
 		return (-1);
-	if (x == 0 || x == FIXEDPT_ONE)
+	if (A == 0 || A == FIXEDPT_ONE)
 		return (A);
+	if (A < FIXEDPT_ONE && A > 6) {
+		invert = 1;
+		A = fixedpt_div(FIXEDPT_ONE, A);
+	}
+	if (A > FIXEDPT_ONE) {
+		fixedpt s = A;
 
-    // "bit" starts at the highest power of four <= the input value.
-    while(bit > A) {
-        bit >>= 2;
-    }
+		iter = 0;
+		while (s > 0) {
+			s >>= 2;
+			iter++;
+		}
+	}
 
-	// Main process
-    while(bit != 0) {
-		tmp = fixedpt_add(res, bit);
-		res >>= 1;
-        if(A >= tmp) {
-            A = fixedpt_sub(A, tmp);
-            res = fixedpt_add(res, bit);
-        }
-        bit >>= 2;
-    }
-
-	/* Process again to get the lowest (FIXEDPT_FBITS / 2) bit */
-	A <<= FIXEDPT_SQRT_SHIFT;
-	res <<= FIXEDPT_SQRT_SHIFT;
-	bit = (fixedptu)1 << (FIXEDPT_SQRT_SHIFT - 2);
-
-    while(bit != 0) {
-		tmp = fixedpt_add(res, bit);
-		res >>= 1;
-        if(A >= tmp) {
-            A = fixedpt_sub(A, tmp);
-            res = fixedpt_add(res, bit);
-        }
-        bit >>= 2;
-    }
-
-	// Rounding if necessary
-	if(A > res)
-		res++;
-
-    return (fixedpt)res << FIXEDPT_SQRT_FINAL_SHIFT;
+	/* Newton's iterations */
+	l = (A >> 1) + 1;
+	for (i = 0; i < iter; i++)
+		l = fixedpt_add(l, fixedpt_div(A, l)) >> 1;
+	if (invert)
+		return (fixedpt_div(FIXEDPT_ONE, l));
+	return (l);
 }
-
 
 /* Returns the value exp(x), i.e. e^x of the given fixedpt number. */
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_exp(fixedpt x)
