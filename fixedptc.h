@@ -180,9 +180,9 @@ _FIXEDPT_PROTOTYPE fixedpt fixedpt_log(fixedpt x, fixedpt base);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp);
 _FIXEDPT_PROTOTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) ;
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt A);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt A);
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt A);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt angle);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt angle);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt angle);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_asin(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_acos(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan(fixedpt x);
@@ -424,6 +424,111 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp)
 	return (fixedpt_exp(fixedpt_mul(fixedpt_ln(x), exp)));
 }
 
+/* Returns the sine of the given fixedpt number. 
+ * Note: the loss of precision is extraordinary! */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_sin(fixedpt angle)
+{
+	/* Minimax coefficients */
+	/* These coefficients are precomputed and provide a high-accuracy approximation. */
+	static const fixedpt c[7] ={ 
+		fixedpt_rconst(1.0),
+		fixedpt_rconst(-0.16666666641626524), // -1/3!
+		fixedpt_rconst(0.008333333171954214), // 1/5!
+		fixedpt_rconst(-0.0001984126963009452), // -1/7!
+		fixedpt_rconst(2.755731884462877e-6), // 1/9!
+		fixedpt_rconst(-2.505210838544172e-8), // -1/11!
+		fixedpt_rconst(1.605904383682161e-10) // 1/13!
+	};
+
+    /* Perform angle normalization */
+    /* Step 1 : Normalize to [-2pi, 2pi] */
+	angle %= FIXEDPT_TWO_PI;
+
+    /* Step 2 : Normalize to [-pi, pi] */
+    if (angle < -FIXEDPT_PI) { 
+        angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
+	} else if (angle > FIXEDPT_PI) {
+        angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
+	}
+
+    /* Step 3 :  Normalize to [-pi/2, pi/2] */
+    if (angle > FIXEDPT_HALF_PI) {
+        angle = fixedpt_sub(FIXEDPT_PI, angle);
+        //flip_cos_sign = 1;
+    } else if (angle < -FIXEDPT_HALF_PI) {
+        angle = fixedpt_sub(-FIXEDPT_PI, angle);
+       // flip_cos_sign = 1;        
+    }
+
+    // Minimax polynomial approximation for sin(x)
+    fixedpt x2 = fixedpt_mul(angle, angle); // x^2
+    return (fixedpt_mul(angle, fixedpt_add(c[0], 
+			fixedpt_mul(x2, fixedpt_add(c[1],  
+			fixedpt_mul(x2, fixedpt_add(c[2], 
+			fixedpt_mul(x2, fixedpt_add(c[3],
+			fixedpt_mul(x2, fixedpt_add(c[4],
+			fixedpt_mul(x2, fixedpt_add(c[5],
+			fixedpt_mul(x2, c[6])
+			)))))))))))));
+}
+
+/* Returns the cosine of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_cos(fixedpt angle)
+{
+	int flip_cos_sign = 0;
+
+	/* Minimax coefficients */
+	/* These coefficients are precomputed and provide a high-accuracy approximation. */
+	static const fixedpt c[7] ={ 
+		fixedpt_rconst(1.0),
+		fixedpt_rconst(-0.5), // -1/2!
+		fixedpt_rconst(0.04166666657946379), // 1/4!
+		fixedpt_rconst(-0.001388888894063317), // -1/6!
+		fixedpt_rconst(2.480158728947673e-5), // 1/8!
+		fixedpt_rconst(-2.755731435139066e-7), // -1/10!
+		fixedpt_rconst(2.087675440040727e-9) // 1/12!
+	};
+
+    /* Perform angle normalization */
+    /* Step 1 : Normalize to [-2pi, 2pi] */
+	angle %= FIXEDPT_TWO_PI;
+
+    /* Step 2 : Normalize to [-pi, pi] */
+    if (angle < -FIXEDPT_PI) { 
+        angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
+	} else if (angle > FIXEDPT_PI) {
+        angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
+	}
+
+    /* Step 3 :  Normalize to [-pi/2, pi/2] */
+    if (angle > FIXEDPT_HALF_PI) {
+        angle = fixedpt_sub(FIXEDPT_PI, angle);
+        flip_cos_sign = 1;
+    } else if (angle < -FIXEDPT_HALF_PI) {
+        angle = fixedpt_sub(-FIXEDPT_PI, angle);
+       flip_cos_sign = 1;        
+    }
+    /* Minimax polynomial approximation for cos(x) */
+    fixedpt x2 = fixedpt_mul(angle, angle); // x^2
+
+	fixedpt val = fixedpt_add(c[0], 
+		fixedpt_mul(x2, fixedpt_add(c[1],
+		fixedpt_mul(x2, fixedpt_add(c[2],
+		fixedpt_mul(x2, fixedpt_add(c[3],
+		fixedpt_mul(x2, fixedpt_add(c[4],
+		fixedpt_mul(x2, fixedpt_add(c[5],
+		fixedpt_mul(x2, c[6])
+	)))))))))));
+
+	return((flip_cos_sign == 0)?val:-val);
+}
+
+/* Returns the tangens of the given fixedpt number */
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt angle)
+{
+	return fixedpt_div(fixedpt_sin(angle), fixedpt_cos(angle));
+}
+
 /* Function to perform the CORDIC algorithm
  * Define the number of iterations */
 #define MAX_CORDIC_ITERATIONS 32
@@ -501,16 +606,14 @@ _FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *
 
     /* Perform angle normalization */
     /* Step 1 : Normalize to [-2pi, 2pi] */
-	while (angle >= FIXEDPT_TWO_PI)
-		angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
-	while (angle <= -FIXEDPT_TWO_PI)
-		angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
+	angle %= FIXEDPT_TWO_PI;
 
     /* Step 2 : Normalize to [-pi, pi] */
-    if (angle < -FIXEDPT_PI) 
+    if (angle < -FIXEDPT_PI) { 
         angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
-    if (angle > FIXEDPT_PI) 
+	} else if (angle > FIXEDPT_PI) {
         angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
+	}
 
     /* Step 3 :  Normalize to [-pi/2, pi/2] */
     if (angle > FIXEDPT_HALF_PI) {
@@ -573,34 +676,6 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x)
     }
 
     return angle;
-}
-
-/* Returns the sine of the given fixedpt number. 
- * Note: the loss of precision is extraordinary! */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_sin(fixedpt A)
-{
-	fixedpt sin_t, cos_t;
-
-	fixedpt_sincos(A, &sin_t, &cos_t);
-	return sin_t;
-}
-
-/* Returns the cosine of the given fixedpt number */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_cos(fixedpt A)
-{
-	fixedpt sin_t, cos_t;
-	
-	fixedpt_sincos(A, &sin_t, &cos_t);
-	return cos_t;
-}
-
-/* Returns the tangens of the given fixedpt number */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt A)
-{
-	fixedpt sin_t, cos_t;
-
-	fixedpt_sincos(A, &sin_t, &cos_t);
-	return fixedpt_div(sin_t, cos_t);
 }
 
 /* Returns the arcsin of the given fixedpt number */

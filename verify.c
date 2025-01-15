@@ -14,9 +14,9 @@
 /* This test program verifies the fixedpt precision, comparing it to
  * float and double precision results. */
 
-static const float pi_f = 3.14159265358979323846264338;
-static const double pi_d = 3.14159265358979323846264338;
-static const fixedpt pi_x = fixedpt_rconst(3.14159265358979323846264338);
+static const float pi_f = 3.14159265358979323846264338-0.1;
+static const double pi_d = 3.14159265358979323846264338-0.1;
+static const fixedpt pi_x = fixedpt_rconst(3.14159265358979323846264338-0.1);
 
 static const float e_f = 2.71828182845904523536028747;
 static const double e_d = 2.71828182845904523536028747;
@@ -76,6 +76,16 @@ verify_trig()
 	printf("sin(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sin(e_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sin(e_x), -2)) - sin(e_d));
 
+	printf("sin(-pi) as float:\t%0.6f\n", sinf(-pi_f));
+	printf("sin(-pi) as double:\t%0.15lf\n", sin(-pi_d));
+	printf("sin(-pi) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sin(-pi_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sin(-pi_x), -2)) - sin(-pi_d));
+
+	printf("sin(-e) as float:\t%0.6f\n", sinf(-e_f));
+	printf("sin(-e) as double:\t%0.15lf\n", sin(-e_d));
+	printf("sin(-e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_sin(-e_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_sin(-e_x), -2)) - sin(-e_d));
+
 	printf("cos(pi) as float:\t%0.6f\n", cosf(pi_f));
 	printf("cos(pi) as double:\t%0.15lf\n", cos(pi_d));
 	printf("cos(pi) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cos(pi_x), -2));
@@ -85,6 +95,16 @@ verify_trig()
 	printf("cos(e) as double:\t%0.15lf\n", cos(e_d));
 	printf("cos(e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cos(e_x), -2));
 	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cos(e_x), -2)) - cos(e_d));
+
+	printf("cos(-pi) as float:\t%0.6f\n", cosf(-pi_f));
+	printf("cos(-pi) as double:\t%0.15lf\n", cos(-pi_d));
+	printf("cos(-pi) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cos(-pi_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cos(-pi_x), -2)) - cos(-pi_d));
+
+	printf("cos(-e) as float:\t%0.6f\n", cosf(-e_f));
+	printf("cos(-e) as double:\t%0.15lf\n", cos(-e_d));
+	printf("cos(-e) as fixedpt:\t%s\n", fixedpt_cstr(fixedpt_cos(-e_x), -2));
+	printf("  delta fixedpt-double:\t%0.10lf\n", atof(fixedpt_cstr(fixedpt_cos(-e_x), -2)) - cos(-e_d));
 
 	printf("tan(e) as float:\t%0.6f\n", tanf(e_f));
 	printf("tan(e) as double:\t%0.15lf\n", tan(e_d));
