@@ -178,14 +178,14 @@ _FIXEDPT_PROTOTYPE fixedpt fixedpt_exp(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_ln(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_log(fixedpt x, fixedpt base);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_pow(fixedpt x, fixedpt exp);
-_FIXEDPT_PROTOTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) ;
-_FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_sin(fixedpt angle);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_cos(fixedpt angle);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_tan(fixedpt angle);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_asin(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_acos(fixedpt x);
 _FIXEDPT_PROTOTYPE fixedpt fixedpt_atan(fixedpt x);
+_FIXEDPT_PROTOTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x);
+
 
 #ifdef __cplusplus
 }
@@ -529,153 +529,137 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_tan(fixedpt angle)
 	return fixedpt_div(fixedpt_sin(angle), fixedpt_cos(angle));
 }
 
-/* Function to perform the CORDIC algorithm
- * Define the number of iterations */
-#define MAX_CORDIC_ITERATIONS 32
-#if FIXEDPT_BITS == 32
-#define MIN_CORDIC_ITERATIONS 10
-#else
-#define MIN_CORDIC_ITERATIONS 16
-#endif
-
-#ifndef CORDIC_ITERATIONS
-	#define CORDIC_ITERATIONS FIXEDPT_FBITS
-#endif
-
-#if CORDIC_ITERATIONS > MAX_CORDIC_ITERATIONS
-	#undef CORDIC_ITERATIONS
-	#define CORDIC_ITERATIONS MAX_CORDIC_ITERATIONS
-#endif
-
-#if CORDIC_ITERATIONS < MIN_CORDIC_ITERATIONS
-	#undef CORDIC_ITERATIONS
-	#define CORDIC_ITERATIONS MIN_CORDIC_ITERATIONS
-#endif
-
-/* Constant */
-
-/*
-// Cordic table in 8087
-1.570796×2-1	0.7853982	atan(20)
-1.854590×2-2	0.4636476	atan(2-1)
-1.959829×2-3	0.2449787	atan(2-2)
-1.989680×2-4	0.1243550	atan(2-3)
-1.997402×2-5	0.0624188	atan(2-4)
-1.999349×2-6	0.0312398	atan(2-5)
-1.999837×2-7	0.0156237	atan(2-6)
-1.999959×2-8	0.0078123	atan(2-7)
-1.999990×2-9	0.0039062	atan(2-8)
-1.999997×2-10	0.0019531	atan(2-9)
-1.999999×2-11	0.0009766	atan(2-10)
-2.000000×2-12	0.0004883	atan(2-11)
-2.000000×2-13	0.0002441	atan(2-12)
-2.000000×2-14	0.0001221	atan(2-13)
-2.000000×2-15	0.0000610	atan(2-14)
-2.000000×2-16	0.0000305	atan(2-15)
-*/
-
-/* Precomputed arctangent values for the circular CORDIC algorithm */
-static const fixedpt FIXEDPT_ATAN_TABLE[MAX_CORDIC_ITERATIONS] = {
-    fixedpt_rconst(0.7853981633974483),             fixedpt_rconst(0.4636476090008061),     
-    fixedpt_rconst(0.24497866312686414),            fixedpt_rconst(0.12435499454676144),
-    fixedpt_rconst(0.06241880999595735),            fixedpt_rconst(0.031239833430268277),   
-    fixedpt_rconst(0.015623728620476831),           fixedpt_rconst(0.007812341060101111),
-    fixedpt_rconst(0.0039062301319669718),          fixedpt_rconst(0.0019531225164788188),  
-    fixedpt_rconst(0.0009765621895593195),          fixedpt_rconst(0.0004882812111948983),
-    fixedpt_rconst(0.00024414062014936177),         fixedpt_rconst(0.00012207031189367021), 
-    fixedpt_rconst(0.00006103515617420877),         fixedpt_rconst(0.000030517578115526096),
-    fixedpt_rconst(0.000015258789061315762),        fixedpt_rconst(0.00000762939453110197),
-    fixedpt_rconst(0.000003814697265606496),        fixedpt_rconst(0.000001907348632810187),
-    fixedpt_rconst(0.0000009536743164059606),       fixedpt_rconst(0.0000004768371582030885), 
-    fixedpt_rconst(0.00000023841857910155712),      fixedpt_rconst(0.00000011920928955078059),
-    fixedpt_rconst(0.000000059604644775390625),     fixedpt_rconst(0.000000029802322387695312), 
-    fixedpt_rconst(0.000000014901161193847656),     fixedpt_rconst(0.000000007450580596923828),
-    fixedpt_rconst(0.000000003725290298461914),     fixedpt_rconst(0.000000001862645149230957), 
-    fixedpt_rconst(0.0000000009313225746154785),    fixedpt_rconst(0.0000000004656612873077393)
-};
-static const fixedpt FIXEDPT_CIRCULAR_CORDIC_INVERSE_K = fixedpt_rconst(0.607252935) ; /* Universal fixed-point 1/K value */
-
-/* Function to compute sine and cosine using CORDIC algorithm */
-_FIXEDPT_FUNCTYPE void fixedpt_sincos(fixedpt angle, fixedpt *sin_val, fixedpt *cos_val) 
+// Minimax polynomial approximation for arctan(z) with 7 terms
+_FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt z) 
 {
-    /* Initialize variables */
-    fixedpt x = FIXEDPT_CIRCULAR_CORDIC_INVERSE_K;
-    fixedpt y = 0;
-    fixedpt xt;
-    int flip_cos_sign = 0;
+    // Example coefficients for a degree-7 polynomial approximation
+    // static fixedpt E[7] = {
+    //     fixedpt_rconst(1.0),
+    //     fixedpt_rconst(-0.3333333333333333),  // -1/3
+    //     fixedpt_rconst(0.2),                 // 1/5
+    //     fixedpt_rconst(-0.1428571428571429), // -1/7
+    //     fixedpt_rconst(0.1111111111111111), // 1/9
+    //     fixedpt_rconst(-0.0909090909090909), // -1/11
+    //     fixedpt_rconst(0.0769230769230769) // 1/13
+    // };
+	// Constatnt in Intel Pentium
+    static fixedpt E[7] = {
+        fixedpt_rconst(1.0),
+        fixedpt_rconst(-0.3333333333),  // -1/3
+        fixedpt_rconst(0.2),                 // 1/5
+        fixedpt_rconst(-0.1428571429), // -1/7
+        fixedpt_rconst(0.1111111089), // 1/9
+        fixedpt_rconst(-0.0909075848), // -1/11
+        fixedpt_rconst(0.0764169081) // 1/13
+    };
 
-    /* Perform angle normalization */
-    /* Step 1 : Normalize to [-2pi, 2pi] */
-	angle %= FIXEDPT_TWO_PI;
+	static fixedpt bias_atan[32] = {
+		fixedpt_rconst(0.0000000000),  // atain(0/32)
+		fixedpt_rconst(0.0312398334),  // atain(1/32)
+		fixedpt_rconst(0.0624188100),  // atain(2/32)
+		fixedpt_rconst(0.0934767812),  // atain(3/32)
+		fixedpt_rconst(0.1243549945),  // atain(4/32)
+		fixedpt_rconst(0.1549967419),  // atain(5/32)
+		fixedpt_rconst(0.1853479500),  // atain(6/32)
+		fixedpt_rconst(0.2153576997),  // atain(7/32)
+		fixedpt_rconst(0.2449786631),  // atain(8/32)
+		fixedpt_rconst(0.2741674511),  // atain(9/32)
+		fixedpt_rconst(0.3028848684),  // atain(10/32)
+		fixedpt_rconst(0.3310960767),  // atain(11/32)
+		fixedpt_rconst(0.3587706703),  // atain(12/32)
+		fixedpt_rconst(0.3858826694),  // atain(13/32)
+		fixedpt_rconst(0.4124104416),  // atain(14/32)
+		fixedpt_rconst(0.4383365599),  // atain(15/32)
+		fixedpt_rconst(0.4636476090),  // atain(16/32)
+		fixedpt_rconst(0.4883339511),  // atain(17/32)
+		fixedpt_rconst(0.5123894603),  // atain(18/32)
+		fixedpt_rconst(0.5358112380),  // atain(19/32)
+		fixedpt_rconst(0.5585993153),  // atain(20/32)
+		fixedpt_rconst(0.5807563536),  // atain(21/32)
+		fixedpt_rconst(0.6022873461),  // atain(22/32)
+		fixedpt_rconst(0.6231993299),  // atain(23/32)
+		fixedpt_rconst(0.6435011088),  // atain(24/32)
+		fixedpt_rconst(0.6632029927),  // atain(25/32)
+		fixedpt_rconst(0.6823165549),  // atain(26/32)
+		fixedpt_rconst(0.7008544079),  // atain(27/32)
+		fixedpt_rconst(0.7188299996),  // atain(28/32)
+		fixedpt_rconst(0.7362574290),  // atain(29/32)
+		fixedpt_rconst(0.7531512810),  // atain(30/32)
+		fixedpt_rconst(0.7695264804)  // atain(31/32)
+	};
 
-    /* Step 2 : Normalize to [-pi, pi] */
-    if (angle < -FIXEDPT_PI) { 
-        angle = fixedpt_add(angle, FIXEDPT_TWO_PI);
-	} else if (angle > FIXEDPT_PI) {
-        angle = fixedpt_sub(angle, FIXEDPT_TWO_PI);
+	int signflip_flag = 0, inverse_flag = 0;
+    fixedpt theta, factor_c = 0;
+
+    // Reduce z to [0, inf] if necessary
+	if(z < 0) {
+		z = fixedpt_abs(z);
+		signflip_flag = 1;
+	}
+	
+	// Reduce z to [0, 1]
+    if (z > FIXEDPT_ONE) {
+        // Use arctan(z) = π/2 - arctan(1/z) for z > 1
+        z = fixedpt_div(FIXEDPT_ONE, z);
+		inverse_flag = 1;
+    }
+
+	// Reduce z to [0, 1/32] using the identity atan(x) = atan{(x - c) / (1 + x * c)} + atan(c)
+	fixedpt c = fixedpt_rconst(31.0);
+	factor_c = c >> 5; // c / 32.0
+	while( fixedpt_sub(z, factor_c) < 0) {
+		c = fixedpt_sub(c, FIXEDPT_ONE);
+		factor_c = c >> 5; // c / 32.0
 	}
 
-    /* Step 3 :  Normalize to [-pi/2, pi/2] */
-    if (angle > FIXEDPT_HALF_PI) {
-        angle = fixedpt_sub(FIXEDPT_PI, angle);
-        flip_cos_sign = 1;
-    } else if (angle < -FIXEDPT_HALF_PI) {
-        angle = fixedpt_sub(-FIXEDPT_PI, angle);
-        flip_cos_sign = 1;        
-    }
+	z = fixedpt_div( fixedpt_sub(z, factor_c), fixedpt_add(FIXEDPT_ONE, fixedpt_mul(z, factor_c)) );
 
-    /* Perform Rotation-mode CORDIC iterations */
-    for (int i = 0; i < CORDIC_ITERATIONS; i++) {
-        if (angle < 0) {
-            xt = fixedpt_add(x, (y >> i));
-            y = fixedpt_sub(y, (x >> i));
-            angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
-        } else {
-            xt = fixedpt_sub(x, (y >> i));
-            y = fixedpt_add(y, (x >> i));
-            angle = fixedpt_sub(angle, FIXEDPT_ATAN_TABLE[i]);
-        }
-        x = xt;
-    }
+    // Polynomial computation
+    fixedpt z2 = fixedpt_mul(z, z);
+    theta = ( fixedpt_mul(z, fixedpt_add(E[0],
+		fixedpt_mul(z2, fixedpt_add(E[1],
+		fixedpt_mul(z2, fixedpt_add(E[2],
+		fixedpt_mul(z2, fixedpt_add(E[3],
+		fixedpt_mul(z2, fixedpt_add(E[4],
+		fixedpt_mul(z2, fixedpt_add(E[5],
+		fixedpt_mul(z2, E[6])
+	)))))))))))) );
 
-    /* Store the results */
-    *cos_val = (flip_cos_sign != 0)? -x : x ;
-    *sin_val = y;
+	theta = fixedpt_add(theta, bias_atan[fixedpt_toint(c)]);
+
+	if(inverse_flag == 1)
+		theta = fixedpt_sub(FIXEDPT_HALF_PI, theta);  // Use arctan(z) = π/2 - arctan(1/z) for z > 1
+
+	if(signflip_flag == 1)
+		theta = -theta;
+
+	return theta;
 }
 
-/* Returns the arctan2 of the given x, y coordinate in fixedpt number using CORDIC algorithm */
+// atan2 implementation with domain reduction
 _FIXEDPT_FUNCTYPE fixedpt fixedpt_atan2(fixedpt y, fixedpt x) 
 {
-    fixedpt angle = 0;
-    fixedpt xt;
+    if (x == 0) {
+        if (y > 0) return FIXEDPT_HALF_PI;   // Positive y-axis
+        if (y < 0) return -FIXEDPT_HALF_PI; // Negative y-axis
+        return 0;                  // Origin (undefined, return 0)
+    }
+    if (y == 0) {
+        return (x > 0 ? 0.0 : FIXEDPT_PI); // Positive or negative x-axis
+    }
 
-    /* Initialize angle */
+	fixedpt theta = fixedpt_atan( fixedpt_div(y, x) );
+
+    // Adjust theta for the correct quadrant
     if (x < 0) {
         if (y >= 0) {
-            angle = FIXEDPT_HALF_PI;
+            theta = fixedpt_add(theta, FIXEDPT_PI); // Quadrant II
         } else {
-            angle = -FIXEDPT_HALF_PI;
+            theta = fixedpt_sub(theta, FIXEDPT_PI); // Quadrant III
         }
-        fixedpt temp = x;
-        x = y;
-        y = -temp;
     }
 
-    /* Perform Vectoring-mode CORDIC iterations */
-    for (int i = 0; i < CORDIC_ITERATIONS; i++) {
-        if (y >= 0) {
-            xt = fixedpt_add(x, (y >> i));
-            y = fixedpt_sub(y, (x >> i));
-            angle = fixedpt_add(angle, FIXEDPT_ATAN_TABLE[i]);
-        } else {
-            xt = fixedpt_sub(x, (y >> i));
-            y = fixedpt_add(y, (x >> i));
-            angle = fixedpt_sub(angle, FIXEDPT_ATAN_TABLE[i]);
-        }
-        x = xt;
-    }
-
-    return angle;
+    return theta;
 }
 
 /* Returns the arcsin of the given fixedpt number */
@@ -720,12 +704,6 @@ _FIXEDPT_FUNCTYPE fixedpt fixedpt_acos(fixedpt x)
 	}
 
 	return fixedpt_atan2(fixedpt_sqrt(fixedpt_sub(FIXEDPT_ONE, fixedpt_mul(x, x))), x);
-}
-
-/* Returns the arctan of the given fixedpt number */
-_FIXEDPT_FUNCTYPE fixedpt fixedpt_atan(fixedpt x)
-{
-	return (fixedpt_atan2(x, 1));
 }
 
 #ifdef __cplusplus

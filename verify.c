@@ -4,7 +4,7 @@
 #include <math.h>
 #include <locale.h>
 
-#define FIXEDPT_BITS 32
+#define FIXEDPT_BITS 64
 
 //#define FIXEDPT_WBITS 16
 
@@ -39,6 +39,10 @@ static const fixedpt atan_2_x = fixedpt_rconst(0.5);
 static const fixedpt atan_3_x = fixedpt_rconst(0.707106781);
 static const fixedpt atan_4_x = fixedpt_rconst(1.0);
 static const fixedpt atan_5_x = fixedpt_rconst(0.866025403);
+
+/*=============================== Extra functions ===============================*/
+
+/*===============================================================================*/
 
 
 void
@@ -233,6 +237,7 @@ main()
 	verify_numbers();
 	printf("\n");
 	verify_atan2();
+	printf("\n");
 	verify_trig();
 	printf("\n");
 	verify_asin();
